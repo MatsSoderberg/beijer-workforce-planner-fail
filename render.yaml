@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: beijer-workforce-planner
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: 20
