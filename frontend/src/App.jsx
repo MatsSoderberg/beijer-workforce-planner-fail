@@ -1,383 +1,733 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Settings2,
+  AlertTriangle,
+  CheckCircle2,
+  Lock,
+  Download,
+  Wand2,
+  Bell,
+  Search,
+  UserRound,
+  Sparkles,
+  RefreshCw,
+  Shuffle,
+  ShieldCheck,
+  Clock3,
+  FileCheck2,
+  Repeat,
+  BarChart3,
+  ArrowLeftRight,
+  CalendarRange,
+  Users,
+  ChevronRight,
+  ChevronLeft,
+  Store,
+} from 'lucide-react';
 
-const initialNewEmployee = { name: '', dept: 'Kassa', employmentPct: 100, eveningOnly: false, weekendRule: 'varannan', active: true };
+const brand = {
+  yellow: '#FED141',
+  yellowDeep: '#D8A900',
+  ink: '#0E1116',
+  text: 'rgba(255,255,255,0.96)',
+  muted: 'rgba(255,255,255,0.72)',
+  glass: 'rgba(255,255,255,0.10)',
+  glassStrong: 'rgba(255,255,255,0.16)',
+  border: 'rgba(255,255,255,0.18)',
+};
 
-function App() {
-  const [role, setRole] = useState('chef');
-  const [view, setView] = useState('dashboard');
-  const [state, setState] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [newEmployee, setNewEmployee] = useState(initialNewEmployee);
-  const [newTimeOff, setNewTimeOff] = useState({ employeeName: '', type: 'Semester', from: '', to: '' });
-  const [message, setMessage] = useState('');
+const steps = [
+  { key: 'store', label: 'Butik', icon: Store },
+  { key: 'period', label: 'Period', icon: CalendarRange },
+  { key: 'staffing', label: 'Bemanning', icon: Users },
+  { key: 'rules', label: 'Regler', icon: ShieldCheck },
+  { key: 'generate', label: 'Generera', icon: Sparkles },
+  { key: 'review', label: 'Avvikelser', icon: AlertTriangle },
+  { key: 'publish', label: 'Publicera', icon: FileCheck2 },
+];
 
-  async function api(path, options = {}) {
-    const res = await fetch(`/api${path}`, {
-      headers: { 'Content-Type': 'application/json' },
-      ...options,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
+const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
-  async function refresh() {
-    setLoading(true);
-    try {
-      const data = await api('/state');
-      setState(data);
-    } finally {
-      setLoading(false);
-    }
-  }
+const schedule = [
+  { name: 'David', dept: 'Kassa', week: ['T', 'D', 'L', 'K', 'D', 'H', 'L'], hours: 40, deviations: 1 },
+  { name: 'Håkan', dept: 'Kassa', week: ['D', 'K', 'D', 'L', 'T', 'L', 'L'], hours: 40, deviations: 0 },
+  { name: 'Pia', dept: 'Kassa', week: ['K', 'L', 'K', 'L', 'K', 'L', 'L'], hours: 25, deviations: 0 },
+  { name: 'Boris', dept: 'Färg', week: ['D', 'L', 'D', 'D', 'K', 'H', 'L'], hours: 40, deviations: 0 },
+  { name: 'Tobias', dept: 'Färg', week: ['K', 'L', 'K', 'L', 'K', 'L', 'L'], hours: 25, deviations: 0 },
+  { name: 'Marianne', dept: 'Järn', week: ['L', 'D', 'D', 'T', 'L', 'H', 'L'], hours: 32, deviations: 1 },
+];
 
-  useEffect(() => { refresh(); }, []);
+const engineStages = [
+  { title: 'Laddar butiksmall', desc: 'Standardvärden för Nacka hämtas automatiskt.', score: 100, icon: Sparkles },
+  { title: 'Tilldelar grundbemanning', desc: 'Minimibemanning per avdelning och dagtyp säkras.', score: 98, icon: Users },
+  { title: 'Lägger helgrotation', desc: 'Varannan och var tredje helg fördelas enligt regelverk.', score: 91, icon: Repeat },
+  { title: 'Optimerar kvällspass', desc: 'Kvällar balanseras utifrån kontrakt och återhämtning.', score: 96, icon: Clock3 },
+  { title: 'Kontrollerar avvikelser', desc: 'Regelbrott, timavvikelser och belastning flaggas.', score: 93, icon: ShieldCheck },
+  { title: 'Förbereder publicering', desc: 'Schemat låses för granskning och skickas till chefsvy.', score: 93, icon: FileCheck2 },
+];
 
-  const activeView = role === 'personal' && !['personal', 'engine'].includes(view) ? 'personal' : view;
+const personalCards = [
+  { title: 'Mitt schema', text: 'Se publicerat schema vecka för vecka med tydliga passkoder.', icon: CalendarDays },
+  { title: 'Ledighetsönskemål', text: 'Skicka önskemål om semester eller ledighet direkt i appen.', icon: CalendarRange },
+  { title: 'Passbyte', text: 'Begär eller godkänn passbyten med kollegor.', icon: ArrowLeftRight },
+  { title: 'Notiser', text: 'Få besked när nytt schema publiceras eller ändras.', icon: Bell },
+];
 
-  const summary = useMemo(() => {
-    if (!state) return null;
-    const schedule = state.schedule || [];
-    const hours = {};
-    const evenings = {};
-    const weekends = {};
-    for (const emp of state.employees) {
-      hours[emp.name] = 0;
-      evenings[emp.name] = 0;
-      weekends[emp.name] = 0;
-    }
-    schedule.forEach((row) => {
-      hours[row.employeeName] = (hours[row.employeeName] || 0) + (row.weekend ? 7.5 : 8.5);
-      if (row.shiftCode === 'K') evenings[row.employeeName] = (evenings[row.employeeName] || 0) + 1;
-      if (row.weekend) weekends[row.employeeName] = (weekends[row.employeeName] || 0) + 1;
-    });
-    return state.employees.map((emp) => ({
-      ...emp,
-      hours: hours[emp.name] || 0,
-      evenings: evenings[emp.name] || 0,
-      weekends: weekends[emp.name] || 0,
-    }));
-  }, [state]);
+function glassCardClass() {
+  return 'rounded-3xl border shadow-2xl backdrop-blur-2xl bg-white/10';
+}
 
-  const weekRows = useMemo(() => {
-    if (!state?.schedule?.length) return [];
-    const targetWeek = state.schedule[0].week;
-    const dates = [...new Set(state.schedule.filter((s) => s.week === targetWeek).map((s) => s.date))].slice(0, 7);
-    return state.employees.filter((e) => e.active).map((emp) => {
-      const slots = dates.map((d) => state.schedule.find((s) => s.date === d && s.employeeName === emp.name)?.shiftCode || 'L');
-      const totalHours = summary?.find((x) => x.name === emp.name)?.hours || 0;
-      return { name: emp.name, dept: emp.dept, slots, totalHours };
-    });
-  }, [state, summary]);
+function glassCardStyle() {
+  return { borderColor: brand.border, boxShadow: '0 24px 80px rgba(0,0,0,0.28)' };
+}
 
-  async function saveSection(section, payload) {
-    const data = await api(`/state/${section}`, { method: 'PUT', body: payload });
-    setState(data);
-    setMessage('Sparat');
-    setTimeout(() => setMessage(''), 1500);
-  }
+function passStyle(code) {
+  if (code === 'K') return { background: 'linear-gradient(135deg, rgba(159,121,1,0.34), rgba(254,209,65,0.22))', color: '#111' };
+  if (code === 'H') return { background: 'linear-gradient(135deg, rgba(254,209,65,0.82), rgba(255,246,199,0.95))', color: '#111' };
+  if (code === 'L') return { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.68)' };
+  if (code === 'T') return { background: 'linear-gradient(135deg, rgba(208,211,212,0.40), rgba(255,255,255,0.14))', color: '#fff' };
+  return { background: 'linear-gradient(135deg, rgba(124,135,142,0.30), rgba(255,255,255,0.12))', color: '#fff' };
+}
 
-  async function addEmployee() {
-    if (!newEmployee.name.trim()) return;
-    const data = await api('/employees', { method: 'POST', body: newEmployee });
-    setState(data);
-    setNewEmployee(initialNewEmployee);
-  }
-
-  async function addTimeOff() {
-    if (!newTimeOff.employeeName || !newTimeOff.from || !newTimeOff.to) return;
-    const data = await api('/timeoff', { method: 'POST', body: newTimeOff });
-    setState(data);
-    setNewTimeOff({ employeeName: '', type: 'Semester', from: '', to: '' });
-  }
-
-  async function generate() {
-    const data = await api('/schedule/generate', { method: 'POST' });
-    setState(data);
-    setView('dashboard');
-  }
-
-  async function publish(flag) {
-    const data = await api('/schedule/publish', { method: 'POST', body: { published: flag } });
-    setState(data);
-  }
-
-  function exportCsv(kind) {
-    window.open(`/api/export/${kind}`, '_blank');
-  }
-
-  if (loading || !state) return <div className="container"><div className="card">Laddar MVP…</div></div>;
-
-  const nav = role === 'chef'
-    ? [
-        ['dashboard', 'Dashboard'],
-        ['setup', 'Setup'],
-        ['people', 'Personal'],
-        ['wizard', 'Wizard'],
-        ['engine', 'AI-motor'],
-      ]
-    : [
-        ['personal', 'Min vy'],
-        ['engine', 'AI-insikt'],
-      ];
-
+function KPI({ title, value, sub }) {
   return (
-    <div className="container">
-      <div className="hero">
-        <div className="hero-main">
-          <div className="pill">Riktig fullstack-MVP</div>
-          <h1>Beijer Workforce Planner</h1>
-          <p className="muted">Frontend + backend + lokal persistent datalagring + API:er + enkel schemagenerator + publiceringsflöde.</p>
-          <div className="topnav" style={{ marginTop: 16 }}>
-            <button className="btn dark" onClick={generate}>Generera schema</button>
-            <button className="btn outline" onClick={() => publish(true)}>Publicera</button>
-            <button className="btn outline" onClick={() => publish(false)}>Avpublicera</button>
-          </div>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+      <Card className={glassCardClass()} style={glassCardStyle()}>
+        <CardContent className="p-5">
+          <div className="text-xs uppercase tracking-[0.14em]" style={{ color: brand.muted }}>{title}</div>
+          <div className="mt-2 text-3xl font-semibold" style={{ color: brand.text }}>{value}</div>
+          {sub && <div className="mt-1 text-sm" style={{ color: brand.muted }}>{sub}</div>}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function Header({ role, setRole }) {
+  return (
+    <div className="relative overflow-hidden rounded-[30px] border shadow-2xl backdrop-blur-2xl" style={{ borderColor: brand.border, background: 'linear-gradient(135deg, rgba(254,209,65,0.92), rgba(255,248,221,0.34) 42%, rgba(255,255,255,0.08) 100%)', boxShadow: '0 28px 90px rgba(0,0,0,0.30)' }}>
+      <motion.div
+        className="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full blur-2xl"
+        animate={{ x: [0, 22, 0], y: [0, 16, 0], opacity: [0.28, 0.48, 0.28] }}
+        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.12) 55%, transparent 72%)' }}
+      />
+      <motion.div
+        className="pointer-events-none absolute right-[-40px] top-[-20px] h-72 w-72 rounded-full blur-3xl"
+        animate={{ x: [0, -24, 0], y: [0, 12, 0], opacity: [0.14, 0.30, 0.14] }}
+        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.10) 50%, transparent 74%)' }}
+      />
+      <div className="relative flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between md:p-8">
+        <div>
+          <div className="text-xs uppercase tracking-[0.14em] text-black/70">Beijer</div>
+          <div className="text-3xl font-semibold text-black md:text-4xl">Workforce Planner</div>
+          <div className="mt-1 text-sm text-black/70">High-end internapp för bemanningsplanering</div>
         </div>
-        <div className="hero-side">
-          <div className="metric"><div className="small muted">Butik</div><div>{state.store.chain} · {state.store.name}</div></div>
-          <div className="metric"><div className="small muted">Period</div><div>{state.period.label}</div></div>
-          <div className="metric"><div className="small muted">Status</div><div>{state.published ? 'Publicerad' : 'Utkast'}</div></div>
+        <div className="flex flex-wrap items-center gap-3 justify-end">
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-600" />
+            <Input placeholder="Sök person, butik, schema..." className="w-64 rounded-2xl border-white/40 bg-white/45 pl-9 text-neutral-900 placeholder:text-neutral-600 backdrop-blur-md" />
+          </div>
+          <Button variant="outline" className="rounded-2xl border-white/40 bg-white/45 text-neutral-900 hover:bg-white/65 backdrop-blur-md"><Bell className="mr-2 h-4 w-4" />Notiser</Button>
+          <div className="flex rounded-2xl border border-white/30 bg-white/30 p-1 backdrop-blur-md">
+            <button onClick={() => setRole('chef')} className={`rounded-xl px-4 py-2 text-sm font-medium transition ${role === 'chef' ? 'bg-black text-white shadow-sm' : 'text-neutral-900/85 hover:bg-white/45'}`}>Chefsvy</button>
+            <button onClick={() => setRole('personal')} className={`rounded-xl px-4 py-2 text-sm font-medium transition ${role === 'personal' ? 'bg-black text-white shadow-sm' : 'text-neutral-900/85 hover:bg-white/45'}`}>Personalvy</button>
+          </div>
         </div>
       </div>
-
-      <div className="toolbar">
-        <div className="topnav">
-          {nav.map(([key, label]) => (
-            <button key={key} className={`btn navbtn ${activeView === key ? 'active' : ''}`} onClick={() => setView(key)}>{label}</button>
-          ))}
-        </div>
-        <div className="topnav">
-          {message && <span className="badge">{message}</span>}
-          <input className="search" placeholder="Sök…" />
-          <div className="topnav" style={{ background: 'rgba(0,0,0,.06)', borderRadius: 16, padding: 4 }}>
-            <button className={`btn ${role === 'chef' ? 'primary' : ''}`} onClick={() => setRole('chef')}>Chefsvy</button>
-            <button className={`btn ${role === 'personal' ? 'primary' : ''}`} onClick={() => setRole('personal')}>Personalvy</button>
-          </div>
-        </div>
-      </div>
-
-      {role === 'chef' && activeView === 'dashboard' && (
-        <>
-          <div className="grid-4">
-            <Kpi title="Medarbetare" value={state.employees.filter((e) => e.active).length} sub="Aktiva" />
-            <Kpi title="Schemarader" value={state.schedule.length} sub="Genererade pass" />
-            <Kpi title="Publicerat" value={state.published ? 'Ja' : 'Nej'} sub="Status" />
-            <Kpi title="Ledigheter" value={state.timeOff.length} sub="Registrerade" />
-          </div>
-          <div className="layout-2">
-            <div className="card">
-              <h3>Veckovy</h3>
-              <p className="muted">Första veckan i schemat.</p>
-              <div className="table-grid">
-                <div className="schedule-header">
-                  <div>Medarbetare</div>
-                  {['Mån','Tis','Ons','Tor','Fre','Lör','Sön'].map((d) => <div key={d}>{d}</div>)}
-                  <div>Timmar</div>
-                  <div>Roll</div>
-                </div>
-                <div className="stack">
-                  {weekRows.slice(0, 8).map((row) => (
-                    <div className="schedule-row" key={row.name}>
-                      <div className="person"><div>{row.name}</div><div className="small muted">{row.dept}</div></div>
-                      {row.slots.map((code, i) => <div key={i} className={`cell code-${code}`}>{code}</div>)}
-                      <div className="person" style={{ textAlign: 'center' }}>{row.totalHours}</div>
-                      <div className="person" style={{ textAlign: 'center' }}>{row.dept}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="stack">
-              <div className="card">
-                <h3>Avvikelsepanel</h3>
-                <div className="stack" style={{ marginTop: 12 }}>
-                  <div className="list-item"><span className="notice-warn">Helgbelastning</span><span className="small">Marianne något högre än snitt</span></div>
-                  <div className="list-item"><span className="notice-ok">Kvällsregel</span><span className="small">Pia/Tobias följer kvällslogik</span></div>
-                  <div className="list-item"><span className="notice-ok">Bemanning</span><span className="small">Grundbemanning genererad</span></div>
-                </div>
-              </div>
-              <div className="card">
-                <h3>Export</h3>
-                <div className="topnav" style={{ marginTop: 12 }}>
-                  <button className="btn primary" onClick={() => exportCsv('schedule')}>Exportera schema CSV</button>
-                  <button className="btn outline" onClick={() => exportCsv('summary')}>Exportera sammanställning CSV</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {role === 'chef' && activeView === 'setup' && (
-        <div className="layout-setup">
-          <div className="card">
-            <h3>Butik och period</h3>
-            <div className="form-grid" style={{ marginTop: 14 }}>
-              <div className="field"><label>Kedja</label><input className="input" value={state.store.chain} onChange={(e) => saveSection('store', { ...state.store, chain: e.target.value })} /></div>
-              <div className="field"><label>Butik</label><input className="input" value={state.store.name} onChange={(e) => saveSection('store', { ...state.store, name: e.target.value })} /></div>
-              <div className="field"><label>Start</label><input className="input" type="date" value={state.period.from} onChange={(e) => saveSection('period', { ...state.period, from: e.target.value })} /></div>
-              <div className="field"><label>Slut</label><input className="input" type="date" value={state.period.to} onChange={(e) => saveSection('period', { ...state.period, to: e.target.value })} /></div>
-              <div className="field"><label>Vardag öppnar</label><input className="input" value={state.store.weekdayOpen} onChange={(e) => saveSection('store', { ...state.store, weekdayOpen: e.target.value })} /></div>
-              <div className="field"><label>Vardag stänger</label><input className="input" value={state.store.weekdayClose} onChange={(e) => saveSection('store', { ...state.store, weekdayClose: e.target.value })} /></div>
-              <div className="field"><label>Helg öppnar</label><input className="input" value={state.store.weekendOpen} onChange={(e) => saveSection('store', { ...state.store, weekendOpen: e.target.value })} /></div>
-              <div className="field"><label>Helg stänger</label><input className="input" value={state.store.weekendClose} onChange={(e) => saveSection('store', { ...state.store, weekendClose: e.target.value })} /></div>
-            </div>
-          </div>
-          <div className="stack">
-            <div className="card">
-              <h3>Bemanning</h3>
-              <div className="form-grid" style={{ marginTop: 14 }}>
-                {Object.entries(state.staffing.weekday).map(([dept, value]) => (
-                  <div className="field" key={dept}><label>{dept} vardag</label><input className="input" type="number" value={value} onChange={(e) => saveSection('staffing', { ...state.staffing, weekday: { ...state.staffing.weekday, [dept]: Number(e.target.value) } })} /></div>
-                ))}
-                {Object.entries(state.staffing.weekend).map(([dept, value]) => (
-                  <div className="field" key={dept}><label>{dept} helg</label><input className="input" type="number" value={value} onChange={(e) => saveSection('staffing', { ...state.staffing, weekend: { ...state.staffing.weekend, [dept]: Number(e.target.value) } })} /></div>
-                ))}
-              </div>
-            </div>
-            <div className="card">
-              <h3>Regler</h3>
-              <div className="stack" style={{ marginTop: 12 }}>
-                <Toggle label="Undvik tidigt efter kväll" checked={state.rules.avoidEarlyAfterEvening} onChange={(checked) => saveSection('rules', { ...state.rules, avoidEarlyAfterEvening: checked })} />
-                <Toggle label="Markera svenska röda dagar" checked={state.rules.swedishHolidays} onChange={(checked) => saveSection('rules', { ...state.rules, swedishHolidays: checked })} />
-                <Toggle label="Tillåt manuell override" checked={state.rules.allowManualOverride} onChange={(checked) => saveSection('rules', { ...state.rules, allowManualOverride: checked })} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {role === 'chef' && activeView === 'people' && (
-        <div className="layout-setup">
-          <div className="card">
-            <div className="row-between"><h3>Personalregister</h3><span className="badge">{state.employees.length} personer</span></div>
-            <table className="table" style={{ marginTop: 12 }}>
-              <thead>
-                <tr><th>Namn</th><th>Avdelning</th><th>Tjänst</th><th>Kväll</th><th>Helgregel</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                {summary.map((emp) => (
-                  <tr key={emp.id}><td>{emp.name}</td><td>{emp.dept}</td><td>{emp.employmentPct}%</td><td>{emp.eveningOnly ? 'Ja' : 'Nej'}</td><td>{emp.weekendRule}</td><td>{emp.active ? 'Aktiv' : 'Inaktiv'}</td></tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="stack">
-            <div className="card">
-              <h3>Ny medarbetare</h3>
-              <div className="form-grid" style={{ marginTop: 14 }}>
-                <div className="field"><label>Namn</label><input className="input" value={newEmployee.name} onChange={(e) => setNewEmployee({ ...newEmployee, name: e.target.value })} /></div>
-                <div className="field"><label>Avdelning</label><select className="select" value={newEmployee.dept} onChange={(e) => setNewEmployee({ ...newEmployee, dept: e.target.value })}><option>Kassa</option><option>Färg</option><option>Järn</option></select></div>
-                <div className="field"><label>Tjänstgöringsgrad</label><input className="input" type="number" value={newEmployee.employmentPct} onChange={(e) => setNewEmployee({ ...newEmployee, employmentPct: Number(e.target.value) })} /></div>
-                <div className="field"><label>Helgregel</label><select className="select" value={newEmployee.weekendRule} onChange={(e) => setNewEmployee({ ...newEmployee, weekendRule: e.target.value })}><option value="varannan">Varannan</option><option value="vartredje">Var tredje</option></select></div>
-                <div className="field full"><label><input type="checkbox" checked={newEmployee.eveningOnly} onChange={(e) => setNewEmployee({ ...newEmployee, eveningOnly: e.target.checked })} /> Endast kvällspass</label></div>
-              </div>
-              <div className="topnav" style={{ marginTop: 12 }}><button className="btn primary" onClick={addEmployee}>Lägg till</button></div>
-            </div>
-            <div className="card">
-              <h3>Frånvaro / semester</h3>
-              <div className="form-grid" style={{ marginTop: 14 }}>
-                <div className="field"><label>Medarbetare</label><select className="select" value={newTimeOff.employeeName} onChange={(e) => setNewTimeOff({ ...newTimeOff, employeeName: e.target.value })}><option value="">Välj</option>{state.employees.map((e) => <option key={e.id}>{e.name}</option>)}</select></div>
-                <div className="field"><label>Typ</label><select className="select" value={newTimeOff.type} onChange={(e) => setNewTimeOff({ ...newTimeOff, type: e.target.value })}><option>Semester</option><option>Ledighet</option><option>Sjukfrånvaro</option></select></div>
-                <div className="field"><label>Från</label><input className="input" type="date" value={newTimeOff.from} onChange={(e) => setNewTimeOff({ ...newTimeOff, from: e.target.value })} /></div>
-                <div className="field"><label>Till</label><input className="input" type="date" value={newTimeOff.to} onChange={(e) => setNewTimeOff({ ...newTimeOff, to: e.target.value })} /></div>
-              </div>
-              <div className="topnav" style={{ marginTop: 12 }}><button className="btn primary" onClick={addTimeOff}>Registrera frånvaro</button></div>
-              <div className="stack" style={{ marginTop: 14 }}>
-                {state.timeOff.map((r) => <div key={r.id} className="list-item"><div><strong>{r.employeeName}</strong><div className="small muted">{r.type}</div></div><div className="small">{r.from} – {r.to}</div></div>)}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {role === 'chef' && activeView === 'wizard' && (
-        <div className="layout-setup">
-          <div className="card">
-            <h3>Planeringswizard</h3>
-            <p className="muted">Tydligt flöde för chef före schemakörning.</p>
-            <div className="stack" style={{ marginTop: 14 }}>
-              {['1. Kontrollera butik', '2. Kontrollera period', '3. Bekräfta bemanning', '4. Bekräfta regler', '5. Generera schema', '6. Granska avvikelser', '7. Publicera'].map((s, i) => (
-                <div key={s} className="list-item"><span>{s}</span><span className="badge">Steg {i + 1}</span></div>
-              ))}
-            </div>
-          </div>
-          <div className="card">
-            <h3>Kör schemagenerering</h3>
-            <p className="muted">Genererar schema från backend och sparar det på servern.</p>
-            <div className="topnav" style={{ marginTop: 12 }}>
-              <button className="btn dark" onClick={generate}>Generera nu</button>
-              <button className="btn outline" onClick={() => publish(true)}>Publicera</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeView === 'engine' && (
-        <div className="layout-setup">
-          <div className="card">
-            <h3>AI-motor</h3>
-            <div className="stack" style={{ marginTop: 12 }}>
-              {[
-                ['Laddar butiksmall', 'Nacka-standard laddad'],
-                ['Sätter grundbemanning', 'Kassa/Färg/Järn enligt standard'],
-                ['Tar hänsyn till frånvaro', `${state.timeOff.length} frånvaroregistreringar`],
-                ['Genererar pass', `${state.schedule.length} pass skapade`],
-                ['Klar för publicering', state.published ? 'Publicerad' : 'Utkast'],
-              ].map(([a, b]) => <div key={a} className="list-item"><div><strong>{a}</strong><div className="small muted">{b}</div></div><span className="badge">OK</span></div>)}
-            </div>
-          </div>
-          <div className="card">
-            <h3>Motorns mål</h3>
-            <div className="stack" style={{ marginTop: 12 }}>
-              {['Bemanning säkras', 'Kvällsregler följs', 'Frånvaro respekteras', 'Schema går att publicera', 'CSV-export fungerar'].map((x) => <div key={x} className="list-item"><span>{x}</span><span className="badge">MVP</span></div>)}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {role === 'personal' && activeView === 'personal' && (
-        <div className="layout-setup">
-          <div className="card">
-            <h3>Min vy</h3>
-            <p className="muted">Enklare self-service för publicerat schema.</p>
-            <div className="grid-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: 12 }}>
-              <Kpi title="Nästa pass" value="10:30" sub="Kvällspass" />
-              <Kpi title="Status" value={state.published ? 'Publicerat' : 'Utkast'} sub="Aktuell vecka" />
-              <Kpi title="Önskemål" value={state.timeOff.length} sub="Registrerade" />
-            </div>
-            <div className="card" style={{ marginTop: 14, boxShadow: 'none', padding: 0, background: 'transparent' }}>
-              <div className="schedule-header" style={{ gridTemplateColumns: 'repeat(7, 1fr)', minWidth: 'unset' }}>
-                {['Mån','Tis','Ons','Tor','Fre','Lör','Sön'].map((d) => <div key={d}>{d}</div>)}
-              </div>
-              <div className="schedule-row" style={{ gridTemplateColumns: 'repeat(7, 1fr)', minWidth: 'unset' }}>
-                {['K','L','K','L','K','L','L'].map((code, i) => <div key={i} className={`cell code-${code}`}>{code}</div>)}
-              </div>
-            </div>
-          </div>
-          <div className="stack">
-            <div className="card">
-              <h3>Personalfunktioner</h3>
-              <div className="stack" style={{ marginTop: 12 }}>
-                <button className="btn primary">Önska ledighet</button>
-                <button className="btn outline">Begär passbyte</button>
-                <button className="btn outline">Se notiser</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-function Kpi({ title, value, sub }) {
-  return <div className="card"><div className="kpi-title">{title}</div><div className="kpi-value">{value}</div><div className="small muted">{sub}</div></div>;
+function Dashboard() {
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          <KPI title="Medarbetare" value="15" sub="3 avdelningar" />
+          <KPI title="Schemakvalitet" value="93%" sub="Efter AI-optimering" />
+          <KPI title="Avvikelser" value="2" sub="1 prioriterad" />
+          <KPI title="Period" value="Sep–Dec" sub="18 veckor" />
+        </div>
+
+        <Card className={glassCardClass()} style={glassCardStyle()}>
+          <CardHeader>
+            <CardTitle style={{ color: brand.text }}>Publicerat schema</CardTitle>
+            <CardDescription style={{ color: brand.muted }}>Chefsvy vecka 41 med timmar och avvikelser direkt i tabellen.</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-[1050px]">
+              <div className="mb-2 grid grid-cols-[180px_repeat(7,1fr)_100px_110px] gap-2 text-xs" style={{ color: brand.muted }}>
+                <div>Medarbetare</div>
+                {days.map((d) => <div key={d}>{d}</div>)}
+                <div>Timmar</div>
+                <div>Avv.</div>
+              </div>
+              <div className="space-y-2">
+                {schedule.map((row) => (
+                  <div key={row.name} className="grid grid-cols-[180px_repeat(7,1fr)_100px_110px] gap-2">
+                    <div className="rounded-xl border bg-white/12 px-3 py-2 backdrop-blur-md" style={{ borderColor: brand.border }}>
+                      <div className="font-medium" style={{ color: brand.text }}>{row.name}</div>
+                      <div className="text-xs" style={{ color: brand.muted }}>{row.dept}</div>
+                    </div>
+                    {row.week.map((d, i) => (
+                      <div key={i} className="rounded-xl py-2 text-center font-semibold" style={passStyle(d)}>{d}</div>
+                    ))}
+                    <div className="rounded-xl border bg-white/12 py-2 text-center backdrop-blur-md" style={{ borderColor: brand.border, color: brand.text }}>{row.hours}</div>
+                    <div className="rounded-xl border bg-white/12 py-2 text-center backdrop-blur-md" style={{ borderColor: brand.border, color: brand.text }}>{row.deviations}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        <Card className={glassCardClass()} style={glassCardStyle()}>
+          <CardHeader>
+            <CardTitle style={{ color: brand.text }}>Avvikelsepanel</CardTitle>
+            <CardDescription style={{ color: brand.muted }}>Det viktigaste för chefen före publicering.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-3 rounded-xl border bg-white/8 p-3 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <AlertTriangle className="mt-0.5 text-amber-400" />
+              <div className="text-sm" style={{ color: brand.text }}>David har högre helgbelastning vecka 42 än snittet.</div>
+            </div>
+            <div className="flex gap-3 rounded-xl border bg-white/8 p-3 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <AlertTriangle className="mt-0.5 text-amber-400" />
+              <div className="text-sm" style={{ color: brand.text }}>Marianne ligger något högre i helgbelastning på Järn.</div>
+            </div>
+            <div className="flex gap-3 rounded-xl border bg-white/8 p-3 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <CheckCircle2 className="mt-0.5 text-green-400" />
+              <div className="text-sm" style={{ color: brand.text }}>Kvällsregler uppfylls för Pia och Tobias.</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={glassCardClass()} style={glassCardStyle()}>
+          <CardHeader>
+            <CardTitle style={{ color: brand.text }}>Publicering</CardTitle>
+            <CardDescription style={{ color: brand.muted }}>Klart för granskning och låsning.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button className="w-full rounded-2xl border-0 shadow-lg" style={{ background: 'linear-gradient(135deg, #FED141, #E8B800)', color: '#111' }}>Publicera schema</Button>
+            <Button variant="outline" className="w-full rounded-2xl border-white/20 bg-white/6 text-white hover:bg-white/12"><Download className="mr-2 h-4 w-4" />Exportera Excel</Button>
+            <Button variant="outline" className="w-full rounded-2xl border-white/20 bg-white/6 text-white hover:bg-white/12"><Lock className="mr-2 h-4 w-4" />Lås schema</Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
-function Toggle({ label, checked, onChange }) {
-  return <label className="list-item"><span>{label}</span><input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} /></label>;
+function WizardStepPanel({ current, setCurrent }) {
+  const step = steps[current];
+  const StepIcon = step.icon;
+  const progress = ((current + 1) / steps.length) * 100;
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const next = () => {
+    if (step.key === 'generate') {
+      setIsGenerating(true);
+      setTimeout(() => {
+        setIsGenerating(false);
+        setCurrent(Math.min(current + 1, steps.length - 1));
+      }, 2200);
+      return;
+    }
+    setCurrent(Math.min(current + 1, steps.length - 1));
+  };
+
+  const prev = () => setCurrent(Math.max(current - 1, 0));
+
+  const content = {
+    store: (
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border bg-white/8 p-5 backdrop-blur-md" style={{ borderColor: brand.border }}>
+          <div className="text-sm font-semibold" style={{ color: brand.text }}>Vald butik</div>
+          <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>Beijer Nacka</div>
+          <div className="mt-1 text-sm" style={{ color: brand.muted }}>Byggvaruhus · Kassa, Färg och Järn</div>
+        </div>
+        <div className="rounded-2xl border bg-white/8 p-5 backdrop-blur-md" style={{ borderColor: brand.border }}>
+          <div className="text-sm font-semibold" style={{ color: brand.text }}>Standardmall</div>
+          <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>Beijer standard</div>
+          <div className="mt-1 text-sm" style={{ color: brand.muted }}>Öppettider, passstruktur och regler är förifyllda.</div>
+        </div>
+      </div>
+    ),
+    period: (
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border bg-white/8 p-5 backdrop-blur-md" style={{ borderColor: brand.border }}>
+          <div className="text-sm font-semibold" style={{ color: brand.text }}>Startdatum</div>
+          <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>1 sep 2026</div>
+        </div>
+        <div className="rounded-2xl border bg-white/8 p-5 backdrop-blur-md" style={{ borderColor: brand.border }}>
+          <div className="text-sm font-semibold" style={{ color: brand.text }}>Slutdatum</div>
+          <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>31 dec 2026</div>
+        </div>
+      </div>
+    ),
+    staffing: (
+      <div className="grid gap-4 md:grid-cols-3">
+        {[
+          ['Kassa vardag', '2 personer'],
+          ['Färg vardag', '1 person'],
+          ['Järn vardag', '2 personer'],
+          ['Kassa helg', '1 person'],
+          ['Färg helg', '1 person'],
+          ['Järn helg', '1 person'],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-2xl border bg-white/8 p-5 backdrop-blur-md" style={{ borderColor: brand.border }}>
+            <div className="text-sm" style={{ color: brand.muted }}>{label}</div>
+            <div className="mt-2 text-xl font-semibold" style={{ color: brand.text }}>{value}</div>
+          </div>
+        ))}
+      </div>
+    ),
+    rules: (
+      <div className="grid gap-3 md:grid-cols-2">
+        {[
+          'Kassa och Färg varannan helg',
+          'Järn var tredje helg',
+          'Ledig fredag före helg på Järn',
+          'Ledig måndag efter helg på Järn',
+          'Pia kväll endast',
+          'Tobias kväll endast',
+          'Undvik tidigt pass efter kvällspass',
+          'Optimera kvällsrättvisa',
+        ].map((r) => (
+          <div key={r} className="flex items-center gap-3 rounded-xl border bg-white/8 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+            <Switch defaultChecked />
+            <div className="text-sm" style={{ color: brand.text }}>{r}</div>
+          </div>
+        ))}
+      </div>
+    ),
+    generate: (
+      <div className="space-y-5">
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            ['Bemanningsgrad', '98%'],
+            ['Helgrättvisa', '89%'],
+            ['Kvällsrättvisa', '96%'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border bg-white/8 p-5 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <div className="text-sm" style={{ color: brand.muted }}>{label}</div>
+              <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>{value}</div>
+            </div>
+          ))}
+        </div>
+        {isGenerating ? (
+          <div className="rounded-2xl border bg-white/10 p-6 backdrop-blur-md" style={{ borderColor: 'rgba(254,209,65,0.35)' }}>
+            <div className="flex items-center gap-3">
+              <RefreshCw className="h-5 w-5 animate-spin text-yellow-300" />
+              <div className="text-lg font-semibold" style={{ color: brand.text }}>AI-motorn bygger schemat</div>
+            </div>
+            <div className="mt-4 space-y-3">
+              {['Analyserar bemanning', 'Optimerar helgfördelning', 'Balanserar kvällspass'].map((line) => (
+                <div key={line} className="flex items-center gap-3 rounded-xl bg-white/6 p-3">
+                  <CheckCircle2 className="h-4 w-4 text-green-400" />
+                  <span style={{ color: brand.text }}>{line}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border bg-white/8 p-6 backdrop-blur-md" style={{ borderColor: brand.border }}>
+            <div className="text-lg font-semibold" style={{ color: brand.text }}>Redo att generera första schemaversionen</div>
+            <div className="mt-1 text-sm" style={{ color: brand.muted }}>Systemet kommer nu att väga bemanning, timmar, kvällar och helger mot regelverket.</div>
+          </div>
+        )}
+      </div>
+    ),
+    review: (
+      <div className="space-y-3">
+        {[
+          ['warning', 'David har högre helgbelastning vecka 42 än snittet.'],
+          ['warning', 'Marianne ligger något högre i helgbelastning på Järn.'],
+          ['ok', 'Kvällsregler uppfylls för Pia och Tobias.'],
+        ].map(([type, text]) => (
+          <div key={text} className="flex gap-3 rounded-xl border bg-white/8 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+            {type === 'warning' ? <AlertTriangle className="mt-0.5 text-amber-400" /> : <CheckCircle2 className="mt-0.5 text-green-400" />}
+            <div className="text-sm" style={{ color: brand.text }}>{text}</div>
+          </div>
+        ))}
+      </div>
+    ),
+    publish: (
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-4">
+          {[
+            ['Period', 'Sep–Dec'],
+            ['Personal', '15'],
+            ['Avdelningar', '3'],
+            ['Schemakvalitet', '93%'],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border bg-white/8 p-5 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <div className="text-sm" style={{ color: brand.muted }}>{label}</div>
+              <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>{value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-2xl border bg-white/10 p-6 backdrop-blur-md" style={{ borderColor: 'rgba(254,209,65,0.35)' }}>
+          <div className="flex items-center gap-3">
+            <FileCheck2 className="text-green-400" />
+            <div className="text-lg font-semibold" style={{ color: brand.text }}>Redo att publiceras</div>
+          </div>
+          <div className="mt-2 text-sm" style={{ color: brand.muted }}>Schemat är granskat och klart för publicering till chefsvy och personalvy.</div>
+        </div>
+      </div>
+    ),
+  };
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[340px_1fr]">
+      <Card className={glassCardClass()} style={glassCardStyle()}>
+        <CardHeader>
+          <CardTitle style={{ color: brand.text }}>Planeringswizard</CardTitle>
+          <CardDescription style={{ color: brand.muted }}>Guidat steg-för-steg-flöde för chef.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <Progress value={progress} />
+          <div className="text-sm" style={{ color: brand.muted }}>Steg {current + 1} av {steps.length}</div>
+          <div className="space-y-2">
+            {steps.map((s, i) => {
+              const Icon = s.icon;
+              return (
+                <button key={s.key} onClick={() => setCurrent(i)} className={`w-full rounded-2xl border px-3 py-3 text-left transition ${i === current ? 'bg-white/18' : 'bg-transparent hover:bg-white/8'}`} style={{ borderColor: i === current ? 'rgba(254,209,65,0.40)' : 'transparent' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-xl p-2" style={{ background: i === current ? 'rgba(254,209,65,0.90)' : 'rgba(255,255,255,0.10)', color: i === current ? '#111' : '#fff' }}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs" style={{ color: brand.muted }}>Steg {i + 1}</div>
+                      <div className="font-medium" style={{ color: brand.text }}>{s.label}</div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={glassCardClass()} style={glassCardStyle()}>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl p-2" style={{ background: 'rgba(254,209,65,0.90)', color: '#111' }}>
+              <StepIcon className="h-4 w-4" />
+            </div>
+            <div>
+              <CardTitle style={{ color: brand.text }}>{step.label}</CardTitle>
+              <CardDescription style={{ color: brand.muted }}>Fyll i eller bekräfta det här steget innan du går vidare.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step.key}
+              initial={{ opacity: 0, x: 18 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -18 }}
+              transition={{ duration: 0.24 }}
+            >
+              {content[step.key]}
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="flex items-center justify-between pt-3">
+            <Button variant="outline" onClick={prev} disabled={current === 0} className="rounded-2xl border-white/20 bg-white/6 text-white hover:bg-white/12 disabled:opacity-40">
+              <ChevronLeft className="mr-2 h-4 w-4" /> Tillbaka
+            </Button>
+            <Button onClick={next} className="rounded-2xl border-0 shadow-lg" style={{ background: 'linear-gradient(135deg, #FED141, #E8B800)', color: '#111' }}>
+              {step.key === 'publish' ? 'Publicera schema' : 'Nästa steg'}
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
-export default App;
+function EngineView() {
+  const [active, setActive] = useState(3);
+  const avgScore = useMemo(() => Math.round(engineStages.reduce((a, b) => a + b.score, 0) / engineStages.length), []);
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <Card className={glassCardClass()} style={glassCardStyle()}>
+        <CardHeader>
+          <CardTitle style={{ color: brand.text }}>AI-schemamotor</CardTitle>
+          <CardDescription style={{ color: brand.muted }}>Visar hur motorn bygger schemat steg för steg.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-2xl border bg-white/10 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <div className="text-xs uppercase" style={{ color: brand.muted }}>Motorstatus</div>
+              <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>Aktiv</div>
+            </div>
+            <div className="rounded-2xl border bg-white/10 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <div className="text-xs uppercase" style={{ color: brand.muted }}>Kvalitet</div>
+              <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>{avgScore}%</div>
+            </div>
+            <div className="rounded-2xl border bg-white/10 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <div className="text-xs uppercase" style={{ color: brand.muted }}>Iterationer</div>
+              <div className="mt-2 text-2xl font-semibold" style={{ color: brand.text }}>3</div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {engineStages.map((stage, i) => {
+              const Icon = stage.icon;
+              const isActive = i === active;
+              return (
+                <button key={stage.title} onClick={() => setActive(i)} className={`w-full rounded-2xl border p-4 text-left transition ${isActive ? 'bg-white/18' : 'bg-white/8 hover:bg-white/12'}`} style={{ borderColor: isActive ? 'rgba(254,209,65,0.55)' : brand.border }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex gap-3">
+                      <div className="rounded-xl p-2" style={{ background: isActive ? brand.yellow : 'rgba(255,255,255,0.12)', color: isActive ? '#111' : '#fff' }}><Icon className="h-4 w-4" /></div>
+                      <div>
+                        <div className="text-sm font-semibold" style={{ color: brand.text }}>{stage.title}</div>
+                        <div className="mt-1 text-sm" style={{ color: brand.muted }}>{stage.desc}</div>
+                      </div>
+                    </div>
+                    <Badge variant="secondary">{stage.score}%</Badge>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={glassCardClass()} style={glassCardStyle()}>
+        <CardHeader>
+          <CardTitle style={{ color: brand.text }}>Optimeringspanel</CardTitle>
+          <CardDescription style={{ color: brand.muted }}>Gör motorn begriplig för verksamheten och utvecklingsteamet.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="rounded-2xl border bg-white/12 p-5 backdrop-blur-md" style={{ borderColor: 'rgba(254,209,65,0.32)' }}>
+            <div className="text-sm font-semibold" style={{ color: brand.text }}>Aktivt steg: {engineStages[active].title}</div>
+            <div className="mt-1 text-sm" style={{ color: brand.muted }}>{engineStages[active].desc}</div>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              ['Bemanningsgrad', 98, Users],
+              ['Timbalans', 94, BarChart3],
+              ['Helgrättvisa', 89, Repeat],
+              ['Kvällsrättvisa', 96, Clock3],
+            ].map(([label, value, Icon]) => (
+              <div key={label}>
+                <div className="mb-1 flex items-center justify-between text-sm" style={{ color: brand.text }}>
+                  <span className="inline-flex items-center gap-2"><Icon className="h-4 w-4" />{label}</span>
+                  <span className="font-medium">{value}%</span>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                  <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${value}%` }} transition={{ duration: 0.8, ease: 'easeOut' }} style={{ background: 'linear-gradient(90deg, #FED141, #E8B800)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <Button variant="outline" className="rounded-2xl border-white/20 bg-white/6 text-white hover:bg-white/12"><RefreshCw className="mr-2 h-4 w-4" />Kör om</Button>
+            <Button variant="outline" className="rounded-2xl border-white/20 bg-white/6 text-white hover:bg-white/12"><Shuffle className="mr-2 h-4 w-4" />Justera viktning</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function PersonalView() {
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <KPI title="Mitt nästa pass" value="Tors 10:30" sub="Kvällspass" />
+          <KPI title="Veckotimmar" value="25 h" sub="Uppdaterat" />
+          <KPI title="Status" value="Publicerat" sub="Vecka 41" />
+        </div>
+
+        <Card className={glassCardClass()} style={glassCardStyle()}>
+          <CardHeader>
+            <CardTitle style={{ color: brand.text }}>Min schemavy</CardTitle>
+            <CardDescription style={{ color: brand.muted }}>Renare och enklare vy för medarbetare.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-2 grid grid-cols-7 gap-2 text-xs" style={{ color: brand.muted }}>
+              {days.map((d) => <div key={d}>{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 gap-2">
+              {['K', 'L', 'K', 'L', 'K', 'L', 'L'].map((code, i) => (
+                <div key={i} className="rounded-2xl py-4 text-center font-semibold" style={passStyle(code)}>{code}</div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="space-y-6">
+        <Card className={glassCardClass()} style={glassCardStyle()}>
+          <CardHeader>
+            <CardTitle style={{ color: brand.text }}>Personalfunktioner</CardTitle>
+            <CardDescription style={{ color: brand.muted }}>Gör appen användbar även efter publicering.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {personalCards.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="flex items-start gap-3 rounded-2xl border bg-white/8 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+                  <div className="rounded-xl p-2" style={{ background: 'rgba(254,209,65,0.22)', color: '#111' }}><Icon className="h-4 w-4" /></div>
+                  <div>
+                    <div className="text-sm font-semibold" style={{ color: brand.text }}>{item.title}</div>
+                    <div className="mt-1 text-sm" style={{ color: brand.muted }}>{item.text}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card className={glassCardClass()} style={glassCardStyle()}>
+          <CardHeader>
+            <CardTitle style={{ color: brand.text }}>Åtgärder</CardTitle>
+            <CardDescription style={{ color: brand.muted }}>Exempel på self-service i personalvy.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button className="w-full rounded-2xl border-0 shadow-lg" style={{ background: 'linear-gradient(135deg, #FED141, #E8B800)', color: '#111' }}><CalendarRange className="mr-2 h-4 w-4" />Önska ledighet</Button>
+            <Button variant="outline" className="w-full rounded-2xl border-white/20 bg-white/6 text-white hover:bg-white/12"><ArrowLeftRight className="mr-2 h-4 w-4" />Begär passbyte</Button>
+            <Button variant="outline" className="w-full rounded-2xl border-white/20 bg-white/6 text-white hover:bg-white/12"><Bell className="mr-2 h-4 w-4" />Se notiser</Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function SettingsView() {
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+      <Card className={glassCardClass()} style={glassCardStyle()}>
+        <CardHeader>
+          <CardTitle style={{ color: brand.text }}>Regelmotor</CardTitle>
+          <CardDescription style={{ color: brand.muted }}>Det som styr hur AI-motorn prioriterar planeringen.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[
+            'Tillåt manuell override',
+            'Markera svenska röda dagar',
+            'Undvik tidigt pass efter kvällspass',
+            'Föreslå kompdag automatiskt',
+            'Låt chef publicera med mindre avvikelser',
+          ].map((item) => (
+            <div key={item} className="flex items-center justify-between rounded-2xl border bg-white/8 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <span className="text-sm" style={{ color: brand.text }}>{item}</span>
+              <Switch defaultChecked />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card className={glassCardClass()} style={glassCardStyle()}>
+        <CardHeader>
+          <CardTitle style={{ color: brand.text }}>Motorns prioritering</CardTitle>
+          <CardDescription style={{ color: brand.muted }}>Gör det lätt att förstå varför schemat ser ut som det gör.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[
+            ['1. Bemanning säkras', Users],
+            ['2. Hårda regler följs', ShieldCheck],
+            ['3. Timmar balanseras', BarChart3],
+            ['4. Helger fördelas rättvist', Repeat],
+            ['5. Kvällar fördelas rättvist', Clock3],
+          ].map(([label, Icon]) => (
+            <div key={label} className="flex items-center gap-3 rounded-2xl border bg-white/10 p-4 backdrop-blur-md" style={{ borderColor: brand.border }}>
+              <Icon className="h-4 w-4 text-white" />
+              <span className="text-sm" style={{ color: brand.text }}>{label}</span>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function PlannerHighEndV4() {
+  const [view, setView] = useState('dashboard');
+  const [role, setRole] = useState('chef');
+  const [wizardStep, setWizardStep] = useState(0);
+
+  const nav = role === 'chef'
+    ? [
+        { key: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+        { key: 'wizard', icon: Wand2, label: 'Planeringswizard' },
+        { key: 'engine', icon: Sparkles, label: 'AI-motor' },
+        { key: 'settings', icon: Settings2, label: 'Regler' },
+      ]
+    : [
+        { key: 'personal', icon: UserRound, label: 'Min vy' },
+        { key: 'engine', icon: Sparkles, label: 'AI-insikt' },
+      ];
+
+  const activeView = role === 'personal' && !['personal', 'engine'].includes(view) ? 'personal' : view;
+
+  return (
+    <div className="min-h-screen relative overflow-hidden" style={{ background: 'radial-gradient(circle at 20% 20%, rgba(254,209,65,0.10), transparent 24%), radial-gradient(circle at 80% 10%, rgba(255,255,255,0.08), transparent 22%), radial-gradient(circle at 70% 70%, rgba(159,121,1,0.12), transparent 24%), linear-gradient(180deg, #0B0F14 0%, #121926 100%)' }}>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute left-[-8%] top-[8%] h-[340px] w-[340px] rounded-full blur-3xl"
+          animate={{ x: [0, 40, 0], y: [0, -20, 0], opacity: [0.18, 0.30, 0.18] }}
+          transition={{ repeat: Infinity, duration: 14, ease: 'easeInOut' }}
+          style={{ background: 'radial-gradient(circle, rgba(254,209,65,0.48) 0%, rgba(254,209,65,0.06) 56%, transparent 72%)' }}
+        />
+        <motion.div
+          className="absolute right-[-6%] top-[18%] h-[300px] w-[300px] rounded-full blur-3xl"
+          animate={{ x: [0, -26, 0], y: [0, 24, 0], opacity: [0.12, 0.24, 0.12] }}
+          transition={{ repeat: Infinity, duration: 18, ease: 'easeInOut' }}
+          style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.04) 52%, transparent 72%)' }}
+        />
+        <motion.div
+          className="absolute left-[35%] bottom-[-8%] h-[320px] w-[320px] rounded-full blur-3xl"
+          animate={{ x: [0, -18, 0], y: [0, 12, 0], opacity: [0.10, 0.18, 0.10] }}
+          transition={{ repeat: Infinity, duration: 16, ease: 'easeInOut' }}
+          style={{ background: 'radial-gradient(circle, rgba(159,121,1,0.42) 0%, rgba(159,121,1,0.04) 50%, transparent 72%)' }}
+        />
+      </div>
+
+      <div className="relative mx-auto max-w-[1600px] space-y-6 p-6">
+        <Header role={role} setRole={setRole} />
+
+        <div className="flex flex-wrap gap-2 rounded-3xl border p-2 backdrop-blur-xl bg-white/8" style={{ borderColor: brand.border, boxShadow: '0 16px 50px rgba(0,0,0,0.18)' }}>
+          {nav.map((n) => (
+            <Button key={n.key} variant={activeView === n.key ? 'default' : 'outline'} onClick={() => setView(n.key)} className={`rounded-2xl ${activeView === n.key ? 'bg-white text-black hover:bg-white' : 'border-white/20 bg-white/6 text-white hover:bg-white/12'}`}>
+              <n.icon className="mr-2 h-4 w-4" />
+              {n.label}
+            </Button>
+          ))}
+        </div>
+
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+          {role === 'chef' && activeView === 'dashboard' && <Dashboard />}
+          {role === 'chef' && activeView === 'wizard' && <WizardStepPanel current={wizardStep} setCurrent={setWizardStep} />}
+          {activeView === 'engine' && <EngineView />}
+          {role === 'chef' && activeView === 'settings' && <SettingsView />}
+          {role === 'personal' && activeView === 'personal' && <PersonalView />}
+        </motion.div>
+      </div>
+    </div>
+  );
+}

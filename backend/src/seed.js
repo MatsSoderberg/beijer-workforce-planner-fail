@@ -1,3 +1,4 @@
-import { resetState } from './store.js';
-resetState();
-console.log('State reset to default seed data.');
+import { resetDatabase } from './db.js';
+
+await resetDatabase();
+console.log('SQLite database reset with seed data.');

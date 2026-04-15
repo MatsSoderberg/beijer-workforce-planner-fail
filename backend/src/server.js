@@ -1,11 +1,13 @@
 import express from 'express';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { readState, writeState, ensureDataFile } from './store.js';
+import cors from 'cors';
+import { login, requireAuth, requireChef } from './auth.js';
+import { getState, updateSection, addEmployee, addTimeOff, saveSchedule, publishRun } from './repository.js';
 import { generateSchedule, scheduleSummary } from './scheduler.js';
+import { getDb, resetDatabase } from './db.js';
 
-ensureDataFile();
+await getDb();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const __filename = fileURLToPath(import.meta.url);
@@ -16,74 +18,90 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
-app.get('/api/state', (_req, res) => res.json(readState()));
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const result = await login(req.body?.email, req.body?.password);
+    res.json(result);
+  } catch (error) {
+    res.status(401).json({ error: error.message });
+  }
+});
 
-app.put('/api/state/:section', (req, res) => {
-  const state = readState();
-  const section = req.params.section;
-  if (!(section in state)) return res.status(404).send('Unknown section');
-  state[section] = req.body;
-  writeState(state);
+app.get('/api/auth/me', requireAuth, (req, res) => {
+  res.json({ user: req.user });
+});
+
+app.get('/api/state', requireAuth, async (req, res) => {
+  const state = await getState();
+  if (req.user.role === 'personal' && req.user.employeeName) {
+    state.schedule = state.schedule.filter((row) => row.employeeName === req.user.employeeName);
+    state.employees = state.employees.filter((emp) => emp.name === req.user.employeeName);
+    state.timeOff = state.timeOff.filter((row) => row.employeeName === req.user.employeeName);
+  }
   res.json(state);
 });
 
-app.post('/api/employees', (req, res) => {
-  const state = readState();
-  const nextId = Math.max(0, ...state.employees.map((e) => e.id || 0)) + 1;
-  state.employees.push({ id: nextId, ...req.body });
-  writeState(state);
-  res.json(state);
+app.put('/api/state/:section', requireAuth, requireChef, async (req, res) => {
+  try {
+    res.json(await updateSection(req.params.section, req.body));
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 });
 
-app.post('/api/timeoff', (req, res) => {
-  const state = readState();
-  const nextId = Math.max(0, ...state.timeOff.map((e) => e.id || 0)) + 1;
-  state.timeOff.push({ id: nextId, ...req.body });
-  writeState(state);
-  res.json(state);
+app.post('/api/employees', requireAuth, requireChef, async (req, res) => {
+  res.json(await addEmployee(req.body));
 });
 
-app.post('/api/schedule/generate', (_req, res) => {
-  const state = readState();
-  state.schedule = generateSchedule(state);
-  writeState(state);
-  res.json(state);
+app.post('/api/timeoff', requireAuth, async (req, res) => {
+  const payload = req.user.role === 'personal' && req.user.employeeName
+    ? { ...req.body, employeeName: req.user.employeeName }
+    : req.body;
+  res.json(await addTimeOff(payload));
 });
 
-app.post('/api/schedule/publish', (req, res) => {
-  const state = readState();
-  state.published = Boolean(req.body?.published);
-  writeState(state);
-  res.json(state);
+app.post('/api/schedule/generate', requireAuth, requireChef, async (_req, res) => {
+  const state = await getState();
+  const generated = generateSchedule(state);
+  res.json(await saveSchedule(generated.schedule, generated.metrics.qualityScore, generated.metrics));
+});
+
+app.post('/api/schedule/publish', requireAuth, requireChef, async (req, res) => {
+  res.json(await publishRun(Boolean(req.body?.published)));
+});
+
+app.post('/api/admin/reset', requireAuth, requireChef, async (_req, res) => {
+  await resetDatabase();
+  res.json(await getState());
 });
 
 function csvEscape(value) {
   return `"${String(value ?? '').replaceAll('"', '""')}"`;
 }
 
-app.get('/api/export/schedule', (_req, res) => {
-  const state = readState();
+app.get('/api/export/schedule', requireAuth, async (req, res) => {
+  const state = await getState();
+  const rows = req.user.role === 'personal' && req.user.employeeName
+    ? state.schedule.filter((row) => row.employeeName === req.user.employeeName)
+    : state.schedule;
   const header = ['date', 'day', 'week', 'dept', 'shiftCode', 'shiftName', 'start', 'end', 'employeeName'];
-  const rows = state.schedule.map((row) => header.map((h) => csvEscape(row[h])).join(','));
-  const csv = [header.join(','), ...rows].join('\n');
+  const csvRows = rows.map((row) => header.map((h) => csvEscape(row[h])).join(','));
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="schedule.csv"');
-  res.send(csv);
+  res.send([header.join(','), ...csvRows].join('\n'));
 });
 
-app.get('/api/export/summary', (_req, res) => {
-  const state = readState();
+app.get('/api/export/summary', requireAuth, requireChef, async (_req, res) => {
+  const state = await getState();
   const summary = scheduleSummary(state);
   const header = ['name', 'dept', 'employmentPct', 'hours', 'evenings', 'weekends'];
-  const rows = summary.map((row) => header.map((h) => csvEscape(row[h])).join(','));
-  const csv = [header.join(','), ...rows].join('\n');
+  const csvRows = summary.map((row) => header.map((h) => csvEscape(row[h])).join(','));
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="summary.csv"');
-  res.send(csv);
+  res.send([header.join(','), ...csvRows].join('\n'));
 });
 
 app.use(express.static(frontendDist));
-
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(frontendDist, 'index.html'));
