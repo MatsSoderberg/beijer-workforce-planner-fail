@@ -13,13 +13,11 @@ const employees = [
   { id: 'katarina', name: 'Katarina', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
   { id: 'pia', name: 'Pia', department: 'Kassa', eveningOnly: false, employmentPct: 82 },
   { id: 'amelie', name: 'Amelie', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
-
   { id: 'tobias', name: 'Tobias', department: 'Färg', eveningOnly: true, employmentPct: 82 },
   { id: 'boris', name: 'Boris', department: 'Färg', eveningOnly: false, employmentPct: 100 },
   { id: 'therese', name: 'Therese', department: 'Färg', eveningOnly: false, employmentPct: 100 },
   { id: 'fia', name: 'Fia', department: 'Färg', eveningOnly: false, employmentPct: 100 },
   { id: 'pernilla', name: 'Pernilla', department: 'Färg', eveningOnly: false, employmentPct: 100 },
-
   { id: 'marianne', name: 'Marianne', department: 'Järn', eveningOnly: false, employmentPct: 100 },
   { id: 'elias', name: 'Elias', department: 'Järn', eveningOnly: false, employmentPct: 100 },
   { id: 'junia', name: 'Junia', department: 'Järn', eveningOnly: false, employmentPct: 100 },
@@ -84,7 +82,6 @@ function Dashboard() {
           <KPI title="Avvikelser" value="2" sub="1 prioriterad" />
           <KPI title="Period" value="Sep–Dec" sub="18 veckor" />
         </div>
-
         <div className="card">
           <div className="section-title">Publicerat schema</div>
           <div className="muted">Chefsvy vecka 41 med timmar och avvikelser direkt i tabellen.</div>
@@ -109,7 +106,6 @@ function Dashboard() {
           </div>
         </div>
       </div>
-
       <div className="stack">
         <div className="card">
           <div className="section-title">Avvikelsepanel</div>
@@ -128,19 +124,16 @@ function Dashboard() {
 function EngineView() {
   const [active, setActive] = useState(3);
   const avgScore = useMemo(() => Math.round(engineStages.reduce((a, b) => a + b.score, 0) / engineStages.length), []);
-
   return (
     <div className="split-layout">
       <div className="card">
         <div className="section-title">AI-schemamotor</div>
         <div className="muted">Visar hur motorn bygger schemat steg för steg.</div>
-
         <div className="grid three top-gap">
           <div className="card feature-card compact"><div className="eyebrow">Motorstatus</div><div className="panel-value">Aktiv</div></div>
           <div className="card feature-card compact"><div className="eyebrow">Kvalitet</div><div className="panel-value">{avgScore}%</div></div>
           <div className="card feature-card compact"><div className="eyebrow">Iterationer</div><div className="panel-value">3</div></div>
         </div>
-
         <div className="stack top-gap">
           {engineStages.map((stage, i) => (
             <button key={stage.title} className={`engine-card ${i === active ? 'active' : ''}`} onClick={() => setActive(i)}>
@@ -153,7 +146,6 @@ function EngineView() {
           ))}
         </div>
       </div>
-
       <div className="card">
         <div className="section-title">Optimeringspanel</div>
         <div className="muted">Gör motorn begriplig för verksamheten och utvecklingsteamet.</div>
@@ -171,7 +163,6 @@ function PreferencesView() {
   const [selectedId, setSelectedId] = useState(employees[0].id);
   const [preferences, setPreferences] = useState(initialPreferences);
   const [saveTick, setSaveTick] = useState(0);
-
   const selectedEmployee = employees.find(e => e.id === selectedId);
 
   function handleSave(nextPref) {
@@ -184,14 +175,9 @@ function PreferencesView() {
       <aside className="card employee-list-card">
         <div className="section-title">Medarbetare</div>
         <div className="muted">Välj person och registrera önskemål som ska vägas in i schemamotorn.</div>
-
         <div className="employee-list">
           {employees.map((e) => (
-            <button
-              key={e.id}
-              className={`employee-list-item ${selectedId === e.id ? 'active' : ''}`}
-              onClick={() => setSelectedId(e.id)}
-            >
+            <button key={e.id} className={`employee-list-item ${selectedId === e.id ? 'active' : ''}`} onClick={() => setSelectedId(e.id)}>
               <div>
                 <div className="employee-name">{e.name}</div>
                 <div className="muted small">{e.department} · {e.employmentPct}% {e.eveningOnly ? '· kväll endast' : ''}</div>
@@ -200,7 +186,6 @@ function PreferencesView() {
           ))}
         </div>
       </aside>
-
       <section className="card">
         <div className="preferences-header">
           <div>
@@ -209,7 +194,6 @@ function PreferencesView() {
           </div>
           <div className="save-pill">Sparade ändringar: {saveTick}</div>
         </div>
-
         <PersonalPreferencesForm
           employeeName={selectedEmployee.name}
           value={preferences[selectedId] || { preferredOffDays: [], preferredWorkDays: [], fixedTimeOff: [], notes: '' }}
@@ -229,7 +213,6 @@ function PersonalView() {
           <KPI title="Veckotimmar" value="25 h" sub="Uppdaterat" />
           <KPI title="Status" value="Publicerat" sub="Vecka 41" />
         </div>
-
         <div className="card">
           <div className="section-title">Min schemavy</div>
           <div className="muted">Renare och enklare vy för medarbetare.</div>
@@ -251,23 +234,12 @@ export default function App() {
     setSession(getSession());
   }, []);
 
-  if (!session) {
-    return <LoginScreen onLogin={(user) => setSession(user)} />;
-  }
+  if (!session) return <LoginScreen onLogin={(user) => setSession(user)} />;
 
   const role = session.role;
   const nav = role === 'chef'
-    ? [
-        ['dashboard', 'Dashboard'],
-        ['wizard', 'Planeringswizard'],
-        ['preferences', 'Önskemål'],
-        ['engine', 'AI-motor'],
-        ['copilot', 'Copilot'],
-      ]
-    : [
-        ['personal', 'Min vy'],
-        ['engine', 'AI-insikt'],
-      ];
+    ? [['dashboard', 'Dashboard'], ['wizard', 'Planeringswizard'], ['preferences', 'Önskemål'], ['engine', 'AI-motor'], ['copilot', 'Copilot']]
+    : [['personal', 'Min vy'], ['engine', 'AI-insikt']];
 
   const activeView = role === 'personal' && !['personal', 'engine'].includes(view) ? 'personal' : view;
 
@@ -276,7 +248,6 @@ export default function App() {
       <div className="orb orb-a"></div>
       <div className="orb orb-b"></div>
       <div className="orb orb-c"></div>
-
       <div className="container">
         <header className="hero">
           <div>
@@ -284,7 +255,6 @@ export default function App() {
             <h1>Workforce Planner</h1>
             <p>Modern internapp för bemanningsplanering</p>
           </div>
-
           <div className="hero-right">
             <div className="hero-chip">{session.name} · {role === 'chef' ? 'Chefsvy' : 'Personalvy'}</div>
             <button className="hero-chip" onClick={() => { logout(); setSession(null); }}>Logga ut</button>
