@@ -1,0 +1,24 @@
+{
+  "hard_rules": [
+    "Öppettider och grundbemanning per avdelning",
+    "Tobias/Pia eveningOnly",
+    "Helgintervall: Kassa/Färg varannan helg, Järn var tredje helg",
+    "Järn ledig dag före och efter helg",
+    "Fasta ledigheter (datum)",
+    "Endast tillåtna skiftkoder per dagtyp"
+  ],
+  "soft_rules": [
+    "Ledig måndag / andra preferensdagar",
+    "Önskade arbetsdagar",
+    "Rättvis fördelning av helger",
+    "Rättvis fördelning av kvällspass",
+    "Timbalans mot kontrakt"
+  ],
+  "next_optimization_targets": [
+    "Svenska röda dagar automatiskt",
+    "Riktig DB-lagring för preferenser och schemahistorik",
+    "Hård/mjuk viktning i admin",
+    "Bättre optimering vid regelkrockar",
+    "Publicera/lås schema med versionshistorik"
+  ]
+}
