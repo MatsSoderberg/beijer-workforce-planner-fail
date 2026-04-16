@@ -1,0 +1,26 @@
+{
+  "items": [
+    {
+      "employeeId": "pia",
+      "preferredOffDays": [
+        "monday"
+      ],
+      "preferredWorkDays": [
+        "tuesday",
+        "thursday"
+      ],
+      "fixedTimeOff": [],
+      "notes": "Önskar helst ledig måndagar."
+    },
+    {
+      "employeeId": "tobias",
+      "preferredOffDays": [],
+      "preferredWorkDays": [
+        "tuesday",
+        "thursday"
+      ],
+      "fixedTimeOff": [],
+      "notes": "Jobbar endast kvällar."
+    }
+  ]
+}

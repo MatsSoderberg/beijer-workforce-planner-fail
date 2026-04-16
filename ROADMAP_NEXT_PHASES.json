@@ -1,0 +1,19 @@
+{
+  "phase_now": [
+    "Preferenser synliga i frontend",
+    "Preferenser sparas i backend JSON",
+    "Schemagenerering läser sparade preferenser"
+  ],
+  "phase_next": [
+    "Svenska röda dagar automatiskt",
+    "Versionshistorik för schema",
+    "Publicera/lås schema",
+    "Bättre avvikelsepanel med verkliga konflikter"
+  ],
+  "phase_product": [
+    "Databas istället för JSON-fil",
+    "Admin för hårda/mjuka viktningar",
+    "Full kalender-/frånvarohantering",
+    "Global optimering för hela perioden samtidigt"
+  ]
+}
