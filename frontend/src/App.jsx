@@ -163,7 +163,7 @@ function PreferencesView() {
   const [selectedId, setSelectedId] = useState(employees[0].id);
   const [preferences, setPreferences] = useState(initialPreferences);
   const [saveTick, setSaveTick] = useState(0);
-  const selectedEmployee = employees.find(e => e.id === selectedId);
+  const selectedEmployee = employees.find((e) => e.id === selectedId);
 
   function handleSave(nextPref) {
     setPreferences((prev) => ({ ...prev, [selectedId]: nextPref }));

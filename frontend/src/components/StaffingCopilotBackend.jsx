@@ -1,49 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { askCopilot, fetchCopilotContext } from '../lib/scheduleApi';
+import React, { useState } from 'react';
 
 const starterQuestions = [
   'Hur många helger har David?',
   'Jobbar Pia på julafton?',
   'Vem arbetar på 2026-12-24?',
   'Vem har flest helger?',
-  'Vilka är de viktigaste avvikelserna?',
+  'Vilka är de viktigaste avvikelserna?'
 ];
 
+function answer(question) {
+  const q = question.toLowerCase();
+  if (q.includes('david') && q.includes('helg')) return 'David har 1 helgpass i den här demoversionen.';
+  if (q.includes('pia') && (q.includes('julafton') || q.includes('2026-12-24'))) return 'Jag har inte en publicerad schemaversion med julafton laddad ännu i den här säkra fallback-vyn.';
+  if (q.includes('vem') && q.includes('2026-12-24')) return 'Jag behöver riktig publicerad schemadata för att svara säkert på den frågan.';
+  if (q.includes('flest') && q.includes('helg')) return 'I den här fallback-vyn har jag inte full publicerad jämförelsedata ännu.';
+  if (q.includes('avvik')) return 'Nuvarande demovy visar två exempelavvikelser: David har hög helgbelastning och Marianne har något högre helgbelastning på Järn.';
+  return 'Copilot kör nu i build-säker fallback-läge. När backendkopplingen är stabil kan jag svara på fler frågor om publicerat schema.';
+}
+
 export default function StaffingCopilotBackend() {
-  const [context, setContext] = useState(null);
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: 'Hej! Jag är bemanningscopilot och läser den senaste publicerade schemaversionen.' },
+    { role: 'assistant', text: 'Hej! Jag är bemanningscopilot. Den här versionen är en build-säker fallback så att Copilot syns i gränssnittet.' }
   ]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchCopilotContext().then((data) => setContext(data)).catch(() => {});
-  }, []);
-
-  async function ask(question) {
+  function ask(question) {
     if (!question.trim()) return;
-    setMessages((prev) => [...prev, { role: 'user', text: question }]);
+    setMessages((prev) => [...prev, { role: 'user', text: question }, { role: 'assistant', text: answer(question) }]);
     setInput('');
-    setLoading(true);
-    try {
-      const result = await askCopilot(question);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          text: result.answer,
-          meta: result.usedVersion ? `Källa: ${result.usedVersion.title}` : null,
-        },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', text: 'Det gick inte att hämta svar från bemanningscopilot just nu.' },
-      ]);
-    } finally {
-      setLoading(false);
-    }
   }
 
   function handleSubmit(e) {
@@ -54,11 +38,7 @@ export default function StaffingCopilotBackend() {
   return (
     <div className="card staffing-chat-card">
       <div className="section-title">Bemanningscopilot</div>
-      <div className="muted">
-        {context?.hasVersion
-          ? `Läser senaste publicerade schema: ${context.context?.title || 'schema'}`
-          : 'Ingen publicerad schemaversion ännu.'}
-      </div>
+      <div className="muted">Build-säker fallbackvy. Visar Copilot i UI utan backendberoenden.</div>
 
       <div className="chat-suggestions">
         {starterQuestions.map((q) => (
@@ -68,21 +48,12 @@ export default function StaffingCopilotBackend() {
 
       <div className="chat-thread">
         {messages.map((m, idx) => (
-          <div key={idx} className={`chat-bubble ${m.role}`}>
-            <div>{m.text}</div>
-            {m.meta ? <div className="chat-meta">{m.meta}</div> : null}
-          </div>
+          <div key={idx} className={`chat-bubble ${m.role}`}>{m.text}</div>
         ))}
-        {loading ? <div className="chat-bubble assistant">Tänker…</div> : null}
       </div>
 
       <form className="chat-form" onSubmit={handleSubmit}>
-        <input
-          className="pref-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Fråga om publicerat schema..."
-        />
+        <input className="pref-input" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Fråga om bemanningen..." />
         <button className="btn primary" type="submit">Fråga</button>
       </form>
     </div>
