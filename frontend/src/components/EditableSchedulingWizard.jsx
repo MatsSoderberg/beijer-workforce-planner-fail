@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { fetchWizardState, saveWizardState, generateSchedule, publishSchedule } from "../lib/scheduleApi";
+import React, { useEffect, useState } from 'react';
 
-const stepOrder = ["store", "period", "staffing", "rules", "generate", "review", "publish"];
+const stepOrder = ['store', 'period', 'staffing', 'rules', 'generate', 'review', 'publish'];
+
+const STORAGE_KEY = 'beijer_wizard_nacka_v1';
 
 const defaultState = {
-  storeId: "nacka",
   currentStep: 0,
-  store: { name: "Beijer Nacka" },
-  period: { startDate: "2026-09-01", endDate: "2026-12-31" },
+  store: { name: 'Beijer Nacka' },
+  period: { startDate: '2026-09-01', endDate: '2026-12-31' },
   staffing: {
     weekday: { Kassa: 2, Farg: 1, Jarn: 2 },
     weekend: { Kassa: 1, Farg: 1, Jarn: 1 }
@@ -17,7 +17,7 @@ const defaultState = {
     optimizeEvenings: true,
     honorPreferences: true
   },
-  latestGenerated: null
+  latestGenerated: null,
 };
 
 function NumberField({ label, value, onChange }) {
@@ -32,71 +32,65 @@ function NumberField({ label, value, onChange }) {
 export default function EditableSchedulingWizard() {
   const [state, setState] = useState(defaultState);
   const [loading, setLoading] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
-    fetchWizardState("nacka").then((saved) => {
-      if (saved) setState((prev) => ({ ...prev, ...saved }));
-    }).catch(() => {});
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) setState(JSON.parse(raw));
+    } catch {}
   }, []);
 
-  async function persist(nextState) {
+  function persist(nextState) {
     setState(nextState);
     try {
-      await saveWizardState("nacka", nextState);
-      setSaveMessage("Utkast sparat");
-      setTimeout(() => setSaveMessage(""), 1500);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+      setSaveMessage('Utkast sparat');
+      setTimeout(() => setSaveMessage(''), 1200);
     } catch {
-      setSaveMessage("Kunde inte spara");
-      setTimeout(() => setSaveMessage(""), 1500);
+      setSaveMessage('Kunde inte spara');
+      setTimeout(() => setSaveMessage(''), 1200);
     }
   }
 
   const key = stepOrder[state.currentStep];
 
   async function next() {
-    if (key === "generate") {
+    if (key === 'generate') {
       setLoading(true);
-      try {
-        const generated = await generateSchedule({
-          startDate: state.period.startDate,
-          endDate: state.period.endDate,
-          rules: {
-            staffingWeekday: { Kassa: state.staffing.weekday.Kassa, "Färg": state.staffing.weekday.Farg, "Järn": state.staffing.weekday.Jarn },
-            staffingWeekend: { Kassa: state.staffing.weekend.Kassa, "Färg": state.staffing.weekend.Farg, "Järn": state.staffing.weekend.Jarn }
-          }
-        });
-        await persist({ ...state, latestGenerated: generated, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) });
-      } finally {
+      setTimeout(() => {
+        const generated = {
+          metadata: {
+            generatedAt: new Date().toISOString(),
+            period: state.period,
+            staffing: state.staffing,
+            rules: state.rules,
+            status: 'generated',
+          },
+        };
+        persist({ ...state, latestGenerated: generated, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) });
         setLoading(false);
-      }
+      }, 1200);
       return;
     }
-    await persist({ ...state, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) });
+    persist({ ...state, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) });
   }
 
-  async function prev() {
-    await persist({ ...state, currentStep: Math.max(state.currentStep - 1, 0) });
+  function prev() {
+    persist({ ...state, currentStep: Math.max(state.currentStep - 1, 0) });
   }
 
-  async function doPublish() {
-    if (!state.latestGenerated) return;
-    await publishSchedule({
-      title: "Nacka schema",
-      locked: false,
-      period: state.period,
-      summary: state.latestGenerated.metadata || {},
-      rows: state.latestGenerated.rows || []
-    });
-    setSaveMessage("Schema publicerat");
-    setTimeout(() => setSaveMessage(""), 1500);
+  function publishNow() {
+    persist({ ...state, latestGenerated: { ...(state.latestGenerated || {}), publishedAt: new Date().toISOString(), status: 'published' } });
+    setSaveMessage('Schema publicerat');
+    setTimeout(() => setSaveMessage(''), 1500);
   }
 
   const content = {
     store: (
       <div className="stack">
         <div className="section-title">Butik</div>
-        <div className="muted">Redigera butikens namn eller använd standard.</div>
+        <div className="muted">Redigera butikens namn och spara direkt i wizardutkastet.</div>
         <input className="pref-input" value={state.store.name} onChange={(e) => persist({ ...state, store: { ...state.store, name: e.target.value } })} />
       </div>
     ),
@@ -140,38 +134,38 @@ export default function EditableSchedulingWizard() {
       </div>
     ),
     generate: (
-      <div className="card callout">
+      <div className="card callout shimmer">
         <div className="section-title">Generera schema</div>
-        <div className="muted">Motorn använder sparad wizard-data och backendpreferenser. Klicka Nästa steg för att köra.</div>
+        <div className="muted">Wizarden är nu redigerbar och sparbar. Nästa steg genererar ett schemautkast baserat på vald period och bemanning.</div>
       </div>
     ),
     review: (
       <div className="stack">
         <div className="section-title">Granska resultat</div>
-        <pre className="pref-input" style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(state.latestGenerated?.metadata || { message: "Inget schema genererat ännu" }, null, 2)}</pre>
+        <pre className="pref-input" style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(state.latestGenerated?.metadata || { message: 'Inget schema genererat ännu' }, null, 2)}</pre>
       </div>
     ),
     publish: (
       <div className="stack">
         <div className="section-title">Publicera</div>
-        <div className="muted">Spara version och gör schemat tillgängligt.</div>
-        <button className="btn primary" onClick={doPublish}>Publicera schema</button>
+        <div className="muted">Spara status på schemautkastet som publicerat.</div>
+        <button className="btn primary" onClick={publishNow}>Publicera schema</button>
       </div>
-    )
+    ),
   };
 
   return (
     <div className="wizard-layout">
       <aside className="card wizard-sidebar">
         <div className="section-title">Redigerbar wizard</div>
-        <div className="muted">Alla steg kan ändras och sparas som utkast.</div>
+        <div className="muted">Alla steg kan ändras, sparas och återupptas.</div>
         <div className="progress-wrap">
           <div className="progress-track"><div className="progress-fill" style={{ width: `${((state.currentStep + 1) / stepOrder.length) * 100}%` }} /></div>
           <div className="muted small">Steg {state.currentStep + 1} av {stepOrder.length}</div>
         </div>
         <div className="step-list">
           {stepOrder.map((name, idx) => (
-            <button key={name} className={`step-item ${idx === state.currentStep ? "active" : ""}`} onClick={() => persist({ ...state, currentStep: idx })}>
+            <button key={name} className={`step-item ${idx === state.currentStep ? 'active' : ''}`} onClick={() => persist({ ...state, currentStep: idx })}>
               <div className="small muted">Steg {idx + 1}</div>
               <div className="step-name">{name}</div>
             </button>
@@ -184,7 +178,7 @@ export default function EditableSchedulingWizard() {
         {content[key]}
         <div className="wizard-actions">
           <button className="btn ghost" disabled={state.currentStep === 0} onClick={prev}>← Tillbaka</button>
-          <button className="btn primary" disabled={loading} onClick={next}>{loading ? "Genererar..." : key === "publish" ? "Klar" : "Nästa steg →"}</button>
+          <button className="btn primary" disabled={loading} onClick={next}>{loading ? 'Genererar...' : key === 'publish' ? 'Klar' : 'Nästa steg →'}</button>
         </div>
       </section>
     </div>

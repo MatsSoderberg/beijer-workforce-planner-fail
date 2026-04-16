@@ -1,15 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import LoginScreen from './components/LoginScreen';
+import EditableSchedulingWizard from './components/EditableSchedulingWizard';
 import PersonalPreferencesForm from './components/PersonalPreferencesForm';
-
-const steps = [
-  { key: 'store', label: 'Butik' },
-  { key: 'period', label: 'Period' },
-  { key: 'staffing', label: 'Bemanning' },
-  { key: 'rules', label: 'Regler' },
-  { key: 'generate', label: 'Generera' },
-  { key: 'review', label: 'Avvikelser' },
-  { key: 'publish', label: 'Publicera' },
-];
+import { getSession, logout } from './lib/auth';
 
 const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
@@ -80,202 +73,6 @@ function PassPill({ code }) {
   return <div className={`pass-pill pass-${code.toLowerCase()}`}>{code}</div>;
 }
 
-function Wizard({ current, setCurrent, preferences }) {
-  const step = steps[current];
-  const progress = Math.round(((current + 1) / steps.length) * 100);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const offDayRequests = Object.entries(preferences).filter(([, p]) => (p.preferredOffDays || []).length > 0).length;
-  const fixedTimeOffRequests = Object.entries(preferences).filter(([, p]) => (p.fixedTimeOff || []).length > 0).length;
-
-  const next = () => {
-    if (step.key === 'generate') {
-      setIsGenerating(true);
-      setTimeout(() => {
-        setIsGenerating(false);
-        setCurrent(Math.min(current + 1, steps.length - 1));
-      }, 1800);
-      return;
-    }
-    setCurrent(Math.min(current + 1, steps.length - 1));
-  };
-
-  const prev = () => setCurrent(Math.max(current - 1, 0));
-
-  const content = {
-    store: (
-      <div className="grid two">
-        <div className="card feature-card">
-          <div className="eyebrow">Vald butik</div>
-          <div className="feature-value">Beijer Nacka</div>
-          <div className="muted">Byggvaruhus · Kassa, Färg och Järn</div>
-        </div>
-        <div className="card feature-card">
-          <div className="eyebrow">Standardmall</div>
-          <div className="feature-value">Beijer standard</div>
-          <div className="muted">Öppettider, passstruktur och regler är förifyllda.</div>
-        </div>
-      </div>
-    ),
-    period: (
-      <div className="grid two">
-        <div className="card feature-card">
-          <div className="eyebrow">Startdatum</div>
-          <div className="feature-value">1 sep 2026</div>
-        </div>
-        <div className="card feature-card">
-          <div className="eyebrow">Slutdatum</div>
-          <div className="feature-value">31 dec 2026</div>
-        </div>
-      </div>
-    ),
-    staffing: (
-      <div className="grid three">
-        {[
-          ['Kassa vardag', '2 personer'],
-          ['Färg vardag', '1 person'],
-          ['Järn vardag', '2 personer'],
-          ['Kassa helg', '1 person'],
-          ['Färg helg', '1 person'],
-          ['Järn helg', '1 person'],
-        ].map(([label, value]) => (
-          <div key={label} className="card feature-card">
-            <div className="eyebrow">{label}</div>
-            <div className="panel-value">{value}</div>
-          </div>
-        ))}
-      </div>
-    ),
-    rules: (
-      <div className="grid two">
-        {[
-          'Kassa och Färg varannan helg',
-          'Järn var tredje helg',
-          'Ledig fredag före helg på Järn',
-          'Ledig måndag efter helg på Järn',
-          'Pia 82 %',
-          'Tobias 82 % och kväll endast',
-          'Undvik tidigt pass efter kvällspass',
-          'Optimera kvällsrättvisa',
-        ].map((r) => (
-          <label key={r} className="rule-card">
-            <input type="checkbox" defaultChecked />
-            <span>{r}</span>
-          </label>
-        ))}
-      </div>
-    ),
-    generate: (
-      <div className="stack">
-        <div className="grid four">
-          <div className="card feature-card">
-            <div className="eyebrow">Medarbetare med önskad ledig dag</div>
-            <div className="feature-value">{offDayRequests}</div>
-          </div>
-          <div className="card feature-card">
-            <div className="eyebrow">Med fasta ledigheter</div>
-            <div className="feature-value">{fixedTimeOffRequests}</div>
-          </div>
-          <div className="card feature-card">
-            <div className="eyebrow">Bemanningsgrad</div>
-            <div className="feature-value">98%</div>
-          </div>
-          <div className="card feature-card">
-            <div className="eyebrow">Kvällsrättvisa</div>
-            <div className="feature-value">96%</div>
-          </div>
-        </div>
-
-        <div className="card callout shimmer">
-          <div className="callout-title">AI-motorn</div>
-          {isGenerating ? (
-            <div className="stack">
-              <div className="loading-row"><span className="spinner"></span><strong>Bygger schemat med personliga önskemål...</strong></div>
-              <div className="mini-chip">Analyserar bemanning och helgintervall</div>
-              <div className="mini-chip">Väger in ledig måndag och andra önskemål</div>
-              <div className="mini-chip">Balanserar timmar, kvällar och helger</div>
-            </div>
-          ) : (
-            <>
-              <div className="panel-value">Redo att generera första schemaversionen</div>
-              <div className="muted">Systemet tar nu hänsyn till regler, tjänstgöringsgrad, kvällsregler och personliga önskemål.</div>
-            </>
-          )}
-        </div>
-      </div>
-    ),
-    review: (
-      <div className="stack">
-        {[
-          ['warning', 'David har högre helgbelastning vecka 42 än snittet.'],
-          ['warning', 'Marianne ligger något högre i helgbelastning på Järn.'],
-          ['ok', 'Pias önskemål om ledig måndag har beaktats där det varit möjligt.'],
-          ['ok', 'Tobias kvällsregel har följts i hela perioden.'],
-        ].map(([type, text]) => (
-          <div key={text} className="alert-card">
-            <span className={`dot ${type}`}></span>
-            <span>{text}</span>
-          </div>
-        ))}
-      </div>
-    ),
-    publish: (
-      <div className="stack">
-        <div className="grid four">
-          {[
-            ['Period', 'Sep–Dec'],
-            ['Personal', '15'],
-            ['Avdelningar', '3'],
-            ['Schemakvalitet', '93%'],
-          ].map(([label, value]) => (
-            <div key={label} className="card feature-card">
-              <div className="eyebrow">{label}</div>
-              <div className="feature-value">{value}</div>
-            </div>
-          ))}
-        </div>
-        <div className="card callout">
-          <div className="callout-title">Redo att publiceras</div>
-          <div className="muted">Schemat är granskat, inklusive personliga önskemål, och klart för publicering till chefsvy och personalvy.</div>
-        </div>
-      </div>
-    ),
-  };
-
-  return (
-    <div className="wizard-layout">
-      <aside className="card wizard-sidebar">
-        <div className="section-title">Planeringswizard</div>
-        <div className="muted">Guidat steg-för-steg-flöde för chef.</div>
-
-        <div className="progress-wrap">
-          <div className="progress-track"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
-          <div className="muted small">Steg {current + 1} av {steps.length}</div>
-        </div>
-
-        <div className="step-list">
-          {steps.map((s, i) => (
-            <button key={s.key} className={`step-item ${i === current ? 'active' : ''}`} onClick={() => setCurrent(i)}>
-              <div className="small muted">Steg {i + 1}</div>
-              <div className="step-name">{s.label}</div>
-            </button>
-          ))}
-        </div>
-      </aside>
-
-      <section className="card wizard-main">
-        <div className="section-title">{step.label}</div>
-        <div className="muted">Fyll i eller bekräfta det här steget innan du går vidare.</div>
-        <div className="content-gap">{content[step.key]}</div>
-        <div className="wizard-actions">
-          <button className="btn ghost" onClick={prev} disabled={current === 0}>← Tillbaka</button>
-          <button className="btn primary" onClick={next}>{step.key === 'publish' ? 'Publicera schema' : 'Nästa steg →'}</button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 function Dashboard() {
   return (
     <div className="main-layout">
@@ -290,7 +87,6 @@ function Dashboard() {
         <div className="card">
           <div className="section-title">Publicerat schema</div>
           <div className="muted">Chefsvy vecka 41 med timmar och avvikelser direkt i tabellen.</div>
-
           <div className="schedule-wrap">
             <div className="schedule-head">
               <div>Medarbetare</div>
@@ -298,7 +94,6 @@ function Dashboard() {
               <div>Timmar</div>
               <div>Avv.</div>
             </div>
-
             {schedule.map((row) => (
               <div key={row.name} className="schedule-row">
                 <div className="employee-card">
@@ -322,16 +117,6 @@ function Dashboard() {
             <div className="alert-card"><span className="dot warning"></span><span>David har högre helgbelastning vecka 42 än snittet.</span></div>
             <div className="alert-card"><span className="dot warning"></span><span>Marianne ligger något högre i helgbelastning på Järn.</span></div>
             <div className="alert-card"><span className="dot ok"></span><span>Kvällsregler uppfylls för Pia och Tobias.</span></div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="section-title">Publicering</div>
-          <div className="muted">Klart för granskning och låsning.</div>
-          <div className="stack top-gap">
-            <button className="btn primary wide">Publicera schema</button>
-            <button className="btn ghost wide">Exportera Excel</button>
-            <button className="btn ghost wide">Lås schema</button>
           </div>
         </div>
       </div>
@@ -371,25 +156,10 @@ function EngineView() {
       <div className="card">
         <div className="section-title">Optimeringspanel</div>
         <div className="muted">Gör motorn begriplig för verksamheten och utvecklingsteamet.</div>
-
         <div className="card callout top-gap">
           <div className="callout-title">Aktivt steg</div>
           <div className="panel-value">{engineStages[active].title}</div>
           <div className="muted">{engineStages[active].desc}</div>
-        </div>
-
-        <div className="stack top-gap">
-          {[
-            ['Bemanningsgrad', 98],
-            ['Timbalans', 94],
-            ['Helgrättvisa', 89],
-            ['Kvällsrättvisa', 96],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <div className="bar-head"><span>{label}</span><span>{value}%</span></div>
-              <div className="bar-track"><div className="bar-fill" style={{ width: `${value}%` }} /></div>
-            </div>
-          ))}
         </div>
       </div>
     </div>
@@ -444,15 +214,6 @@ function PreferencesView() {
           value={preferences[selectedId] || { preferredOffDays: [], preferredWorkDays: [], fixedTimeOff: [], notes: '' }}
           onSave={handleSave}
         />
-
-        <div className="preferences-summary card feature-card compact top-gap">
-          <div className="eyebrow">Aktiv sammanfattning</div>
-          <div className="muted">
-            {selectedEmployee.name}: lediga dagar = {(preferences[selectedId]?.preferredOffDays || []).join(', ') || 'inga'}, 
-            arbetsdagar = {(preferences[selectedId]?.preferredWorkDays || []).join(', ') || 'inga'}, 
-            fasta ledigheter = {(preferences[selectedId]?.fixedTimeOff || []).join(', ') || 'inga'}.
-          </div>
-        </div>
       </section>
     </div>
   );
@@ -471,88 +232,10 @@ function PersonalView() {
         <div className="card">
           <div className="section-title">Min schemavy</div>
           <div className="muted">Renare och enklare vy för medarbetare.</div>
-
           <div className="simple-head top-gap">{days.map((d) => <div key={d}>{d}</div>)}</div>
           <div className="simple-grid">
             {['K', 'L', 'K', 'L', 'K', 'L', 'L'].map((code, i) => <PassPill key={i} code={code} />)}
           </div>
-        </div>
-      </div>
-
-      <div className="stack">
-        <div className="card">
-          <div className="section-title">Personalfunktioner</div>
-          <div className="muted">Gör appen användbar även efter publicering.</div>
-          <div className="stack top-gap">
-            <div className="card feature-card compact">
-              <div className="panel-value">Mitt schema</div>
-              <div className="muted">Se publicerat schema vecka för vecka med tydliga passkoder.</div>
-            </div>
-            <div className="card feature-card compact">
-              <div className="panel-value">Ledighetsönskemål</div>
-              <div className="muted">Skicka önskemål om semester eller ledighet direkt i appen.</div>
-            </div>
-            <div className="card feature-card compact">
-              <div className="panel-value">Passbyte</div>
-              <div className="muted">Begär eller godkänn passbyten med kollegor.</div>
-            </div>
-            <div className="card feature-card compact">
-              <div className="panel-value">Notiser</div>
-              <div className="muted">Få besked när nytt schema publiceras eller ändras.</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="section-title">Åtgärder</div>
-          <div className="muted">Exempel på self-service i personalvy.</div>
-          <div className="stack top-gap">
-            <button className="btn primary wide">Önska ledighet</button>
-            <button className="btn ghost wide">Begär passbyte</button>
-            <button className="btn ghost wide">Se notiser</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SettingsView() {
-  return (
-    <div className="split-layout">
-      <div className="card">
-        <div className="section-title">Regelmotor</div>
-        <div className="muted">Det som styr hur AI-motorn prioriterar planeringen.</div>
-        <div className="stack top-gap">
-          {[
-            'Tillåt manuell override',
-            'Markera svenska röda dagar',
-            'Undvik tidigt pass efter kvällspass',
-            'Föreslå kompdag automatiskt',
-            'Låt chef publicera med mindre avvikelser',
-          ].map((item) => (
-            <label key={item} className="rule-card spread">
-              <span>{item}</span>
-              <input type="checkbox" defaultChecked />
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="section-title">Motorns prioritering</div>
-        <div className="muted">Gör det lätt att förstå varför schemat ser ut som det gör.</div>
-        <div className="stack top-gap">
-          {[
-            '1. Bemanning säkras',
-            '2. Hårda regler följs',
-            '3. Timmar balanseras',
-            '4. Helger fördelas rättvist',
-            '5. Personliga önskemål vägs in',
-            '6. Kvällar fördelas rättvist',
-          ].map((label) => (
-            <div key={label} className="card feature-card compact">{label}</div>
-          ))}
         </div>
       </div>
     </div>
@@ -560,18 +243,24 @@ function SettingsView() {
 }
 
 export default function App() {
+  const [session, setSession] = useState(null);
   const [view, setView] = useState('dashboard');
-  const [role, setRole] = useState('chef');
-  const [wizardStep, setWizardStep] = useState(0);
-  const [preferences] = useState(initialPreferences);
 
+  useEffect(() => {
+    setSession(getSession());
+  }, []);
+
+  if (!session) {
+    return <LoginScreen onLogin={(user) => setSession(user)} />;
+  }
+
+  const role = session.role;
   const nav = role === 'chef'
     ? [
         ['dashboard', 'Dashboard'],
         ['wizard', 'Planeringswizard'],
         ['preferences', 'Önskemål'],
         ['engine', 'AI-motor'],
-        ['settings', 'Regler'],
       ]
     : [
         ['personal', 'Min vy'],
@@ -595,12 +284,8 @@ export default function App() {
           </div>
 
           <div className="hero-right">
-            <input className="search" placeholder="Sök person, butik, schema..." />
-            <button className="hero-chip">Notiser</button>
-            <div className="role-toggle">
-              <button className={role === 'chef' ? 'active' : ''} onClick={() => setRole('chef')}>Chefsvy</button>
-              <button className={role === 'personal' ? 'active' : ''} onClick={() => setRole('personal')}>Personalvy</button>
-            </div>
+            <div className="hero-chip">{session.name} · {role === 'chef' ? 'Chefsvy' : 'Personalvy'}</div>
+            <button className="hero-chip" onClick={() => { logout(); setSession(null); }}>Logga ut</button>
           </div>
         </header>
 
@@ -611,10 +296,9 @@ export default function App() {
         </nav>
 
         {role === 'chef' && activeView === 'dashboard' && <Dashboard />}
-        {role === 'chef' && activeView === 'wizard' && <Wizard current={wizardStep} setCurrent={setWizardStep} preferences={preferences} />}
+        {role === 'chef' && activeView === 'wizard' && <EditableSchedulingWizard />}
         {role === 'chef' && activeView === 'preferences' && <PreferencesView />}
         {activeView === 'engine' && <EngineView />}
-        {role === 'chef' && activeView === 'settings' && <SettingsView />}
         {role === 'personal' && activeView === 'personal' && <PersonalView />}
       </div>
     </div>
