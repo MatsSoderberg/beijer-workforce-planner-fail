@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import PersonalPreferencesForm from './components/PersonalPreferencesForm';
 
 const steps = [
   { key: 'store', label: 'Butik' },
@@ -11,6 +12,41 @@ const steps = [
 ];
 
 const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
+
+const employees = [
+  { id: 'david', name: 'David', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
+  { id: 'hakan', name: 'Håkan', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
+  { id: 'katarina', name: 'Katarina', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
+  { id: 'pia', name: 'Pia', department: 'Kassa', eveningOnly: false, employmentPct: 82 },
+  { id: 'amelie', name: 'Amelie', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
+
+  { id: 'tobias', name: 'Tobias', department: 'Färg', eveningOnly: true, employmentPct: 82 },
+  { id: 'boris', name: 'Boris', department: 'Färg', eveningOnly: false, employmentPct: 100 },
+  { id: 'therese', name: 'Therese', department: 'Färg', eveningOnly: false, employmentPct: 100 },
+  { id: 'fia', name: 'Fia', department: 'Färg', eveningOnly: false, employmentPct: 100 },
+  { id: 'pernilla', name: 'Pernilla', department: 'Färg', eveningOnly: false, employmentPct: 100 },
+
+  { id: 'marianne', name: 'Marianne', department: 'Järn', eveningOnly: false, employmentPct: 100 },
+  { id: 'elias', name: 'Elias', department: 'Järn', eveningOnly: false, employmentPct: 100 },
+  { id: 'junia', name: 'Junia', department: 'Järn', eveningOnly: false, employmentPct: 100 },
+  { id: 'marin', name: 'Marin', department: 'Järn', eveningOnly: false, employmentPct: 100 },
+  { id: 'aneta', name: 'Aneta', department: 'Järn', eveningOnly: false, employmentPct: 100 },
+];
+
+const initialPreferences = {
+  pia: {
+    preferredOffDays: ['monday'],
+    preferredWorkDays: ['tuesday', 'thursday'],
+    fixedTimeOff: [],
+    notes: 'Kan gärna jobba tisdag/torsdag när det passar, men helst ledig måndagar.',
+  },
+  tobias: {
+    preferredOffDays: [],
+    preferredWorkDays: ['tuesday', 'thursday'],
+    fixedTimeOff: [],
+    notes: 'Jobbar endast kvällar.',
+  },
+};
 
 const schedule = [
   { name: 'David', dept: 'Kassa', week: ['T', 'D', 'L', 'K', 'D', 'H', 'L'], hours: 40, deviations: 1 },
@@ -30,13 +66,6 @@ const engineStages = [
   { title: 'Förbereder publicering', desc: 'Schemat låses för granskning och skickas till chefsvy.', score: 93 },
 ];
 
-const personalCards = [
-  { title: 'Mitt schema', text: 'Se publicerat schema vecka för vecka med tydliga passkoder.' },
-  { title: 'Ledighetsönskemål', text: 'Skicka önskemål om semester eller ledighet direkt i appen.' },
-  { title: 'Passbyte', text: 'Begär eller godkänn passbyten med kollegor.' },
-  { title: 'Notiser', text: 'Få besked när nytt schema publiceras eller ändras.' },
-];
-
 function KPI({ title, value, sub }) {
   return (
     <div className="card stat-card">
@@ -51,10 +80,13 @@ function PassPill({ code }) {
   return <div className={`pass-pill pass-${code.toLowerCase()}`}>{code}</div>;
 }
 
-function Wizard({ current, setCurrent }) {
+function Wizard({ current, setCurrent, preferences }) {
   const step = steps[current];
   const progress = Math.round(((current + 1) / steps.length) * 100);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const offDayRequests = Object.entries(preferences).filter(([, p]) => (p.preferredOffDays || []).length > 0).length;
+  const fixedTimeOffRequests = Object.entries(preferences).filter(([, p]) => (p.fixedTimeOff || []).length > 0).length;
 
   const next = () => {
     if (step.key === 'generate') {
@@ -121,8 +153,8 @@ function Wizard({ current, setCurrent }) {
           'Järn var tredje helg',
           'Ledig fredag före helg på Järn',
           'Ledig måndag efter helg på Järn',
-          'Pia kväll endast',
-          'Tobias kväll endast',
+          'Pia 82 %',
+          'Tobias 82 % och kväll endast',
           'Undvik tidigt pass efter kvällspass',
           'Optimera kvällsrättvisa',
         ].map((r) => (
@@ -135,31 +167,38 @@ function Wizard({ current, setCurrent }) {
     ),
     generate: (
       <div className="stack">
-        <div className="grid three">
-          {[
-            ['Bemanningsgrad', '98%'],
-            ['Helgrättvisa', '89%'],
-            ['Kvällsrättvisa', '96%'],
-          ].map(([label, value]) => (
-            <div key={label} className="card feature-card">
-              <div className="eyebrow">{label}</div>
-              <div className="feature-value">{value}</div>
-            </div>
-          ))}
+        <div className="grid four">
+          <div className="card feature-card">
+            <div className="eyebrow">Medarbetare med önskad ledig dag</div>
+            <div className="feature-value">{offDayRequests}</div>
+          </div>
+          <div className="card feature-card">
+            <div className="eyebrow">Med fasta ledigheter</div>
+            <div className="feature-value">{fixedTimeOffRequests}</div>
+          </div>
+          <div className="card feature-card">
+            <div className="eyebrow">Bemanningsgrad</div>
+            <div className="feature-value">98%</div>
+          </div>
+          <div className="card feature-card">
+            <div className="eyebrow">Kvällsrättvisa</div>
+            <div className="feature-value">96%</div>
+          </div>
         </div>
-        <div className="card callout">
+
+        <div className="card callout shimmer">
           <div className="callout-title">AI-motorn</div>
           {isGenerating ? (
             <div className="stack">
-              <div className="loading-row"><span className="spinner"></span><strong>Bygger schemat...</strong></div>
-              <div className="mini-chip">Analyserar bemanning</div>
-              <div className="mini-chip">Optimerar helgfördelning</div>
-              <div className="mini-chip">Balanserar kvällspass</div>
+              <div className="loading-row"><span className="spinner"></span><strong>Bygger schemat med personliga önskemål...</strong></div>
+              <div className="mini-chip">Analyserar bemanning och helgintervall</div>
+              <div className="mini-chip">Väger in ledig måndag och andra önskemål</div>
+              <div className="mini-chip">Balanserar timmar, kvällar och helger</div>
             </div>
           ) : (
             <>
               <div className="panel-value">Redo att generera första schemaversionen</div>
-              <div className="muted">Systemet väger bemanning, timmar, kvällar och helger mot regelverket.</div>
+              <div className="muted">Systemet tar nu hänsyn till regler, tjänstgöringsgrad, kvällsregler och personliga önskemål.</div>
             </>
           )}
         </div>
@@ -170,7 +209,8 @@ function Wizard({ current, setCurrent }) {
         {[
           ['warning', 'David har högre helgbelastning vecka 42 än snittet.'],
           ['warning', 'Marianne ligger något högre i helgbelastning på Järn.'],
-          ['ok', 'Kvällsregler uppfylls för Pia och Tobias.'],
+          ['ok', 'Pias önskemål om ledig måndag har beaktats där det varit möjligt.'],
+          ['ok', 'Tobias kvällsregel har följts i hela perioden.'],
         ].map(([type, text]) => (
           <div key={text} className="alert-card">
             <span className={`dot ${type}`}></span>
@@ -196,7 +236,7 @@ function Wizard({ current, setCurrent }) {
         </div>
         <div className="card callout">
           <div className="callout-title">Redo att publiceras</div>
-          <div className="muted">Schemat är granskat och klart för publicering till chefsvy och personalvy.</div>
+          <div className="muted">Schemat är granskat, inklusive personliga önskemål, och klart för publicering till chefsvy och personalvy.</div>
         </div>
       </div>
     ),
@@ -250,6 +290,7 @@ function Dashboard() {
         <div className="card">
           <div className="section-title">Publicerat schema</div>
           <div className="muted">Chefsvy vecka 41 med timmar och avvikelser direkt i tabellen.</div>
+
           <div className="schedule-wrap">
             <div className="schedule-head">
               <div>Medarbetare</div>
@@ -257,6 +298,7 @@ function Dashboard() {
               <div>Timmar</div>
               <div>Avv.</div>
             </div>
+
             {schedule.map((row) => (
               <div key={row.name} className="schedule-row">
                 <div className="employee-card">
@@ -329,6 +371,7 @@ function EngineView() {
       <div className="card">
         <div className="section-title">Optimeringspanel</div>
         <div className="muted">Gör motorn begriplig för verksamheten och utvecklingsteamet.</div>
+
         <div className="card callout top-gap">
           <div className="callout-title">Aktivt steg</div>
           <div className="panel-value">{engineStages[active].title}</div>
@@ -353,6 +396,68 @@ function EngineView() {
   );
 }
 
+function PreferencesView() {
+  const [selectedId, setSelectedId] = useState(employees[0].id);
+  const [preferences, setPreferences] = useState(initialPreferences);
+  const [saveTick, setSaveTick] = useState(0);
+
+  const selectedEmployee = employees.find(e => e.id === selectedId);
+
+  function handleSave(nextPref) {
+    setPreferences((prev) => ({ ...prev, [selectedId]: nextPref }));
+    setSaveTick((x) => x + 1);
+  }
+
+  return (
+    <div className="preferences-layout">
+      <aside className="card employee-list-card">
+        <div className="section-title">Medarbetare</div>
+        <div className="muted">Välj person och registrera önskemål som ska vägas in i schemamotorn.</div>
+
+        <div className="employee-list">
+          {employees.map((e) => (
+            <button
+              key={e.id}
+              className={`employee-list-item ${selectedId === e.id ? 'active' : ''}`}
+              onClick={() => setSelectedId(e.id)}
+            >
+              <div>
+                <div className="employee-name">{e.name}</div>
+                <div className="muted small">{e.department} · {e.employmentPct}% {e.eveningOnly ? '· kväll endast' : ''}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <section className="card">
+        <div className="preferences-header">
+          <div>
+            <div className="section-title">Personliga önskemål</div>
+            <div className="muted">Dessa önskemål används som mjuka regler när nytt schema genereras.</div>
+          </div>
+          <div className="save-pill">Sparade ändringar: {saveTick}</div>
+        </div>
+
+        <PersonalPreferencesForm
+          employeeName={selectedEmployee.name}
+          value={preferences[selectedId] || { preferredOffDays: [], preferredWorkDays: [], fixedTimeOff: [], notes: '' }}
+          onSave={handleSave}
+        />
+
+        <div className="preferences-summary card feature-card compact top-gap">
+          <div className="eyebrow">Aktiv sammanfattning</div>
+          <div className="muted">
+            {selectedEmployee.name}: lediga dagar = {(preferences[selectedId]?.preferredOffDays || []).join(', ') || 'inga'}, 
+            arbetsdagar = {(preferences[selectedId]?.preferredWorkDays || []).join(', ') || 'inga'}, 
+            fasta ledigheter = {(preferences[selectedId]?.fixedTimeOff || []).join(', ') || 'inga'}.
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function PersonalView() {
   return (
     <div className="split-layout">
@@ -366,6 +471,7 @@ function PersonalView() {
         <div className="card">
           <div className="section-title">Min schemavy</div>
           <div className="muted">Renare och enklare vy för medarbetare.</div>
+
           <div className="simple-head top-gap">{days.map((d) => <div key={d}>{d}</div>)}</div>
           <div className="simple-grid">
             {['K', 'L', 'K', 'L', 'K', 'L', 'L'].map((code, i) => <PassPill key={i} code={code} />)}
@@ -378,12 +484,22 @@ function PersonalView() {
           <div className="section-title">Personalfunktioner</div>
           <div className="muted">Gör appen användbar även efter publicering.</div>
           <div className="stack top-gap">
-            {personalCards.map((item) => (
-              <div key={item.title} className="card feature-card compact">
-                <div className="panel-value">{item.title}</div>
-                <div className="muted">{item.text}</div>
-              </div>
-            ))}
+            <div className="card feature-card compact">
+              <div className="panel-value">Mitt schema</div>
+              <div className="muted">Se publicerat schema vecka för vecka med tydliga passkoder.</div>
+            </div>
+            <div className="card feature-card compact">
+              <div className="panel-value">Ledighetsönskemål</div>
+              <div className="muted">Skicka önskemål om semester eller ledighet direkt i appen.</div>
+            </div>
+            <div className="card feature-card compact">
+              <div className="panel-value">Passbyte</div>
+              <div className="muted">Begär eller godkänn passbyten med kollegor.</div>
+            </div>
+            <div className="card feature-card compact">
+              <div className="panel-value">Notiser</div>
+              <div className="muted">Få besked när nytt schema publiceras eller ändras.</div>
+            </div>
           </div>
         </div>
 
@@ -432,7 +548,8 @@ function SettingsView() {
             '2. Hårda regler följs',
             '3. Timmar balanseras',
             '4. Helger fördelas rättvist',
-            '5. Kvällar fördelas rättvist',
+            '5. Personliga önskemål vägs in',
+            '6. Kvällar fördelas rättvist',
           ].map((label) => (
             <div key={label} className="card feature-card compact">{label}</div>
           ))}
@@ -446,10 +563,20 @@ export default function App() {
   const [view, setView] = useState('dashboard');
   const [role, setRole] = useState('chef');
   const [wizardStep, setWizardStep] = useState(0);
+  const [preferences] = useState(initialPreferences);
 
   const nav = role === 'chef'
-    ? [['dashboard', 'Dashboard'], ['wizard', 'Planeringswizard'], ['engine', 'AI-motor'], ['settings', 'Regler']]
-    : [['personal', 'Min vy'], ['engine', 'AI-insikt']];
+    ? [
+        ['dashboard', 'Dashboard'],
+        ['wizard', 'Planeringswizard'],
+        ['preferences', 'Önskemål'],
+        ['engine', 'AI-motor'],
+        ['settings', 'Regler'],
+      ]
+    : [
+        ['personal', 'Min vy'],
+        ['engine', 'AI-insikt'],
+      ];
 
   const activeView = role === 'personal' && !['personal', 'engine'].includes(view) ? 'personal' : view;
 
@@ -484,7 +611,8 @@ export default function App() {
         </nav>
 
         {role === 'chef' && activeView === 'dashboard' && <Dashboard />}
-        {role === 'chef' && activeView === 'wizard' && <Wizard current={wizardStep} setCurrent={setWizardStep} />}
+        {role === 'chef' && activeView === 'wizard' && <Wizard current={wizardStep} setCurrent={setWizardStep} preferences={preferences} />}
+        {role === 'chef' && activeView === 'preferences' && <PreferencesView />}
         {activeView === 'engine' && <EngineView />}
         {role === 'chef' && activeView === 'settings' && <SettingsView />}
         {role === 'personal' && activeView === 'personal' && <PersonalView />}
