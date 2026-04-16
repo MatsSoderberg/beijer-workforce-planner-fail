@@ -1,18 +1,15 @@
-
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const router = express.Router();
 const { generateSchedule } = require("../lib/scheduleEngine");
 
+const holidaysFile = path.join(__dirname, "..", "data", "swedishHolidays.2026.json");
 const prefFile = path.join(__dirname, "..", "data", "preferences.json");
 
-function readPreferences() {
-  if (!fs.existsSync(prefFile)) {
-    return [];
-  }
-  const parsed = JSON.parse(fs.readFileSync(prefFile, "utf8"));
-  return parsed.items || [];
+function readJson(filePath, fallback) {
+  if (!fs.existsSync(filePath)) return fallback;
+  return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
 const employees = [
@@ -32,23 +29,27 @@ const employees = [
   { id: "elias", name: "Elias", department: "Järn", eveningOnly: false, employmentPct: 100, contractHours: 40 },
   { id: "junia", name: "Junia", department: "Järn", eveningOnly: false, employmentPct: 100, contractHours: 40 },
   { id: "marin", name: "Marin", department: "Järn", eveningOnly: false, employmentPct: 100, contractHours: 40 },
-  { id: "aneta", name: "Aneta", department: "Järn", eveningOnly: false, employmentPct: 100, contractHours: 40 },
+  { id: "aneta", name: "Aneta", department: "Järn", eveningOnly: false, employmentPct: 100, contractHours: 40 }
 ];
 
 const defaultRules = {
   staffingWeekday: { Kassa: 2, "Färg": 1, "Järn": 2 },
-  staffingWeekend: { Kassa: 1, "Färg": 1, "Järn": 1 },
+  staffingWeekend: { Kassa: 1, "Färg": 1, "Järn": 1 }
 };
 
 router.post("/generate", async (req, res) => {
   try {
+    const holidayJson = readJson(holidaysFile, { "2026": [] });
+    const prefJson = readJson(prefFile, { items: [] });
     const body = req.body || {};
+
     const result = generateSchedule({
       employees: body.employees || employees,
-      preferences: body.preferences || readPreferences(),
+      preferences: body.preferences || prefJson.items || [],
       startDate: body.startDate || "2026-09-01",
       endDate: body.endDate || "2026-12-31",
       rules: body.rules || defaultRules,
+      holidays: holidayJson["2026"] || []
     });
 
     res.json(result);

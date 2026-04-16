@@ -1,0 +1,9 @@
+export async function generateScheduleV3(payload = {}) {
+  const res = await fetch("/api/schedule/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to generate schedule");
+  return res.json();
+}
