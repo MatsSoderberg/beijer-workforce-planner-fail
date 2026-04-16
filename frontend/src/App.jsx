@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import EditableSchedulingWizard from './components/EditableSchedulingWizard';
 import PersonalPreferencesForm from './components/PersonalPreferencesForm';
+import StaffingCopilotBackend from './components/StaffingCopilotBackend';
 import { getSession, logout } from './lib/auth';
 
 const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
@@ -261,6 +262,7 @@ export default function App() {
         ['wizard', 'Planeringswizard'],
         ['preferences', 'Önskemål'],
         ['engine', 'AI-motor'],
+        ['copilot', 'Copilot'],
       ]
     : [
         ['personal', 'Min vy'],
@@ -299,6 +301,7 @@ export default function App() {
         {role === 'chef' && activeView === 'wizard' && <EditableSchedulingWizard />}
         {role === 'chef' && activeView === 'preferences' && <PreferencesView />}
         {activeView === 'engine' && <EngineView />}
+        {role === 'chef' && activeView === 'copilot' && <StaffingCopilotBackend />}
         {role === 'personal' && activeView === 'personal' && <PersonalView />}
       </div>
     </div>
