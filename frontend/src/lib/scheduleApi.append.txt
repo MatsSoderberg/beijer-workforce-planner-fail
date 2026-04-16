@@ -1,9 +1,16 @@
-export async function generateScheduleV3(payload = {}) {
-  const res = await fetch("/api/schedule/generate", {
+
+export async function fetchCopilotContext() {
+  const res = await fetch("/api/copilot/context");
+  if (!res.ok) throw new Error("Failed to fetch copilot context");
+  return res.json();
+}
+
+export async function askCopilot(question) {
+  const res = await fetch("/api/copilot/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ question }),
   });
-  if (!res.ok) throw new Error("Failed to generate schedule");
+  if (!res.ok) throw new Error("Failed to ask copilot");
   return res.json();
 }
