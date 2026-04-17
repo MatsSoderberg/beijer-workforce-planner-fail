@@ -1,19 +1,14 @@
-Det här paketet gör nästa bästa steg:
-
-1. Preferenser följer med genereringen
-- frontend skickar employees + preferences till /api/schedule/generate
-- fallback-genereringen väger också in preferenser
-- metadata visar preferenceCount
-
-2. Copilot läser nu schema + preferenser + avvikelser
-- frågor om t.ex. "Vilka önskemål har Pia?" fungerar
-- frågor om antal preferenser fungerar
-- frågor om avvikelser fungerar fortsatt
+Det här paketet lägger till:
+- exakta tider per pass
+- en veckobrowser för alla veckor
 
 Filer:
-- frontend/src/App.jsx
-- frontend/src/components/EditableSchedulingWizard.jsx
-- frontend/src/components/StaffingCopilotBackend.jsx
-- frontend/src/components/GeneratedSchedulePreview.jsx
 - frontend/src/lib/scheduleApi.js
 - backend/src/routes/generate.js
+- frontend/src/components/GeneratedSchedulePreview.jsx
+- frontend/src/components/WeeklyScheduleBrowser.jsx
+- styles.append.txt
+
+För att visa alla veckor:
+import WeeklyScheduleBrowser from './components/WeeklyScheduleBrowser';
+<WeeklyScheduleBrowser generated={generatedSchedule} />
