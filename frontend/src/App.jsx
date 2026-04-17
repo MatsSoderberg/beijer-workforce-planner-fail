@@ -175,11 +175,6 @@ export default function App() {
         </nav>
 
         {role === 'chef' && view === 'dashboard' && <Dashboard generatedSchedule={generatedSchedule} employees={employees} />}
-<WeeklyScheduleBrowser generated={generatedSchedule} />
-        {role === 'chef' && view === 'dashboard' && (
-  <>
-    <Dashboard generatedSchedule={generatedSchedule} />
-    <WeeklyScheduleBrowser generated={generatedSchedule} />
   </>
 )}
         {role === 'chef' && view === 'wizard' && (
