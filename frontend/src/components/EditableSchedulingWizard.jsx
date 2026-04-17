@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import EmployeeGrid from './EmployeeGrid';
 
 const stepOrder = ['store', 'period', 'staffing', 'rules', 'generate', 'review', 'publish'];
-const STORAGE_KEY = 'beijer_wizard_nacka_v3';
+const STORAGE_KEY = 'beijer_wizard_nacka_v2';
 
 const defaultState = {
   currentStep: 0,
@@ -29,86 +29,7 @@ function NumberField({ label, value, onChange }) {
   );
 }
 
-function getShiftCodeForEmployee(emp, dayIndex) {
-  const weekendDay = dayIndex % 7 === 5 || dayIndex % 7 === 6;
-  if (weekendDay) {
-    return dayIndex % 3 === 0 ? 'H' : 'L';
-  }
-  if (emp.eveningOnly) return dayIndex % 2 === 0 ? 'K' : 'L';
-  const rotation = ['T', 'D', 'K', 'L', 'D'];
-  return rotation[dayIndex % rotation.length];
-}
-
-function generatePreviewRows(employees, period) {
-  const safeEmployees = Array.isArray(employees) ? employees : [];
-  const start = new Date(period.startDate + 'T00:00:00');
-  const end = new Date(period.endDate + 'T00:00:00');
-  const dates = [];
-  const cur = new Date(start);
-  let idx = 0;
-  while (cur <= end && idx < 28) {
-    dates.push(cur.toISOString().slice(0, 10));
-    cur.setDate(cur.getDate() + 1);
-    idx += 1;
-  }
-
-  return safeEmployees.map((emp, empIndex) => {
-    const assignments = dates.map((date, i) => {
-      let code = getShiftCodeForEmployee(emp, i + empIndex);
-      if (Number(emp.employmentPct) <= 82 && code === 'D' && i % 4 === 0) code = 'L';
-      return { date, code };
-    });
-
-    const totals = {
-      hours: assignments.reduce((sum, a) => sum + (a.code === 'L' ? 0 : a.code === 'H' ? 7 : 8), 0)
-    };
-
-    return {
-      employeeId: emp.id,
-      employeeName: emp.name || 'Namnlös medarbetare',
-      department: emp.department,
-      assignments,
-      totals
-    };
-  });
-}
-
-function buildDiagnostics(rows) {
-  const deviations = [];
-  const holidayAdjustedDays = rows.length ? 2 : 0;
-
-  rows.forEach((row) => {
-    const weekendCount = row.assignments.filter((a) => a.code === 'H').length;
-    const eveningCount = row.assignments.filter((a) => a.code === 'K').length;
-
-    if (weekendCount >= 4) {
-      deviations.push({
-        severity: 'medium',
-        employeeName: row.employeeName,
-        message: `${row.employeeName} har relativt hög helgbelastning i förhandsversionen.`
-      });
-    }
-
-    if (eveningCount >= 5) {
-      deviations.push({
-        severity: 'low',
-        employeeName: row.employeeName,
-        message: `${row.employeeName} har många kvällspass i förhandsversionen.`
-      });
-    }
-  });
-
-  return {
-    deviations,
-    summary: {
-      hardRuleViolations: 0,
-      preferenceConflicts: deviations.length,
-      holidayAdjustedDays
-    }
-  };
-}
-
-export default function EditableSchedulingWizard({ employees = [], setEmployees, onGenerated }) {
+export default function EditableSchedulingWizard({ employees = [], setEmployees }) {
   const [state, setState] = useState(defaultState);
   const [loading, setLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -133,23 +54,12 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
   }
 
   const key = stepOrder[state.currentStep];
-  const employeeStats = useMemo(() => {
-    const total = employees.length;
-    const kassa = employees.filter((e) => e.department === 'Kassa').length;
-    const farg = employees.filter((e) => e.department === 'Färg').length;
-    const jarn = employees.filter((e) => e.department === 'Järn').length;
-    return { total, kassa, farg, jarn };
-  }, [employees]);
 
   async function next() {
     if (key === 'generate') {
       setLoading(true);
       setTimeout(() => {
-        const rows = generatePreviewRows(employees, state.period);
-        const diagnostics = buildDiagnostics(rows);
         const generated = {
-          rows,
-          diagnostics,
           metadata: {
             generatedAt: new Date().toISOString(),
             period: state.period,
@@ -157,12 +67,9 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
             rules: state.rules,
             status: 'generated',
             employeeCount: employees.length,
-            departments: employeeStats
           },
         };
-        const nextState = { ...state, latestGenerated: generated, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) };
-        persist(nextState);
-        if (onGenerated) onGenerated(generated);
+        persist({ ...state, latestGenerated: generated, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) });
         setLoading(false);
       }, 1200);
       return;
@@ -175,16 +82,7 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
   }
 
   function publishNow() {
-    const nextState = {
-      ...state,
-      latestGenerated: {
-        ...(state.latestGenerated || {}),
-        publishedAt: new Date().toISOString(),
-        status: 'published'
-      }
-    };
-    persist(nextState);
-    if (onGenerated && nextState.latestGenerated) onGenerated(nextState.latestGenerated);
+    persist({ ...state, latestGenerated: { ...(state.latestGenerated || {}), publishedAt: new Date().toISOString(), status: 'published' } });
     setSaveMessage('Schema publicerat');
     setTimeout(() => setSaveMessage(''), 1500);
   }
@@ -212,12 +110,6 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
     staffing: (
       <div className="stack">
         <EmployeeGrid employees={employees} setEmployees={setEmployees} />
-        <div className="grid four">
-          <div className="card feature-card compact"><div className="eyebrow">Totalt</div><div className="panel-value">{employeeStats.total}</div></div>
-          <div className="card feature-card compact"><div className="eyebrow">Kassa</div><div className="panel-value">{employeeStats.kassa}</div></div>
-          <div className="card feature-card compact"><div className="eyebrow">Färg</div><div className="panel-value">{employeeStats.farg}</div></div>
-          <div className="card feature-card compact"><div className="eyebrow">Järn</div><div className="panel-value">{employeeStats.jarn}</div></div>
-        </div>
 
         <div className="grid two">
           <div className="card feature-card compact">
@@ -248,18 +140,9 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
       </div>
     ),
     generate: (
-      <div className="stack">
-        <div className="card callout shimmer">
-          <div className="section-title">Generera schema</div>
-          <div className="muted">Nu används den aktuella medarbetarlistan från wizarden. Lägger du till eller tar bort personal slår det igenom i nästa generering.</div>
-        </div>
-
-        <div className="grid four">
-          <div className="card feature-card compact"><div className="eyebrow">Medarbetare</div><div className="panel-value">{employeeStats.total}</div></div>
-          <div className="card feature-card compact"><div className="eyebrow">Kassa</div><div className="panel-value">{employeeStats.kassa}</div></div>
-          <div className="card feature-card compact"><div className="eyebrow">Färg</div><div className="panel-value">{employeeStats.farg}</div></div>
-          <div className="card feature-card compact"><div className="eyebrow">Järn</div><div className="panel-value">{employeeStats.jarn}</div></div>
-        </div>
+      <div className="card callout shimmer">
+        <div className="section-title">Generera schema</div>
+        <div className="muted">Wizarden använder nu aktuell medarbetarlista. Lägg till eller ta bort medarbetare i steget Bemanning innan du genererar.</div>
       </div>
     ),
     review: (
