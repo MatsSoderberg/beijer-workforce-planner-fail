@@ -25,7 +25,7 @@ export default function GeneratedSchedulePreview({ generated }) {
   return (
     <div className="card">
       <div className="section-title">Genererat schema</div>
-      <div className="muted">Förhandsvisning baserad på aktuell medarbetarlista i wizarden.</div>
+      <div className="muted">Förhandsvisning baserad på aktuell medarbetarlista och preferenser.</div>
 
       <div className="schedule-wrap top-gap">
         <div className="schedule-head">

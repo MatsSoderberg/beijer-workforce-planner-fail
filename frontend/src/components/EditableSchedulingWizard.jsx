@@ -3,7 +3,7 @@ import EmployeeGrid from './EmployeeGrid';
 import { generateScheduleFromBackend, generateScheduleFallback } from '../lib/scheduleApi';
 
 const stepOrder = ['store', 'period', 'staffing', 'rules', 'generate', 'review', 'publish'];
-const STORAGE_KEY = 'beijer_wizard_nacka_v4';
+const STORAGE_KEY = 'beijer_wizard_nacka_v6';
 
 const defaultState = {
   currentStep: 0,
@@ -30,7 +30,17 @@ function NumberField({ label, value, onChange }) {
   );
 }
 
-export default function EditableSchedulingWizard({ employees = [], setEmployees, onGenerated }) {
+function mapPreferences(preferences = {}) {
+  return Object.entries(preferences).map(([employeeId, pref]) => ({
+    employeeId,
+    preferredOffDays: pref?.preferredOffDays || [],
+    preferredWorkDays: pref?.preferredWorkDays || [],
+    fixedTimeOff: pref?.fixedTimeOff || [],
+    notes: pref?.notes || ''
+  }));
+}
+
+export default function EditableSchedulingWizard({ employees = [], setEmployees, preferences = {}, onGenerated }) {
   const [state, setState] = useState(defaultState);
   const [loading, setLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -76,6 +86,7 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
             employmentPct: Number(e.employmentPct || 100),
             contractHours: Math.round(40 * (Number(e.employmentPct || 100) / 100))
           })),
+          preferences: mapPreferences(preferences),
           startDate: state.period.startDate,
           endDate: state.period.endDate,
           rules: {
@@ -94,7 +105,8 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
         generated.metadata = {
           ...(generated.metadata || {}),
           employeeCount: employees.length,
-          departments: employeeStats
+          departments: employeeStats,
+          preferenceCount: Object.keys(preferences || {}).length
         };
 
         const nextState = { ...state, latestGenerated: generated, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) };
@@ -187,11 +199,11 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
       <div className="stack">
         <div className="card callout shimmer">
           <div className="section-title">Generera schema</div>
-          <div className="muted">Wizarden skickar nu aktuell medarbetarlista till backend. Om backend inte svarar används en lokal fallback så att flödet ändå fungerar.</div>
+          <div className="muted">Nu skickas både medarbetare och preferenser till genereringen.</div>
         </div>
         <div className="grid four">
           <div className="card feature-card compact"><div className="eyebrow">Medarbetare</div><div className="panel-value">{employeeStats.total}</div></div>
-          <div className="card feature-card compact"><div className="eyebrow">Kassa</div><div className="panel-value">{employeeStats.kassa}</div></div>
+          <div className="card feature-card compact"><div className="eyebrow">Preferenser</div><div className="panel-value">{Object.keys(preferences || {}).length}</div></div>
           <div className="card feature-card compact"><div className="eyebrow">Färg</div><div className="panel-value">{employeeStats.farg}</div></div>
           <div className="card feature-card compact"><div className="eyebrow">Järn</div><div className="panel-value">{employeeStats.jarn}</div></div>
         </div>

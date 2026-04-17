@@ -1,15 +1,14 @@
-Det här paketet gör båda sakerna samtidigt:
+Det här paketet gör nästa bästa steg:
 
-1. Copilot kopplas till den senaste genererade datan i appen
-- App.jsx håller generatedSchedule i state
-- wizarden skickar upp onGenerated
-- Copilot får generated={generatedSchedule}
-- Dashboard kan visa preview på samma generering
+1. Preferenser följer med genereringen
+- frontend skickar employees + preferences till /api/schedule/generate
+- fallback-genereringen väger också in preferenser
+- metadata visar preferenceCount
 
-2. Backend-generering kopplas till samma employees-state
-- wizarden skickar aktuell employees-lista till /api/schedule/generate
-- om backend inte svarar används en lokal fallback
-- genereringen använder alltså nu samma medarbetare som du lägger till/tar bort i wizarden
+2. Copilot läser nu schema + preferenser + avvikelser
+- frågor om t.ex. "Vilka önskemål har Pia?" fungerar
+- frågor om antal preferenser fungerar
+- frågor om avvikelser fungerar fortsatt
 
 Filer:
 - frontend/src/App.jsx
@@ -18,9 +17,3 @@ Filer:
 - frontend/src/components/GeneratedSchedulePreview.jsx
 - frontend/src/lib/scheduleApi.js
 - backend/src/routes/generate.js
-
-Det här är det mest sammanhängande steget hittills mellan:
-- personalgrid
-- generering
-- preview
-- copilot

@@ -9,7 +9,16 @@ function getShiftCodeForEmployee(emp, dayIndex) {
   return rotation[dayIndex % rotation.length];
 }
 
-function buildRows(employees = [], startDate, endDate) {
+function shouldForceOff(emp, preferences, date, index) {
+  const pref = (preferences || []).find((p) => p.employeeId === emp.id) || {};
+  const weekdayMap = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+  const weekday = weekdayMap[new Date(date + "T00:00:00").getDay()];
+  if ((pref.fixedTimeOff || []).includes(date)) return true;
+  if ((pref.preferredOffDays || []).includes(weekday) && index % 2 === 0) return true;
+  return false;
+}
+
+function buildRows(employees = [], startDate, endDate, preferences = []) {
   const start = new Date(startDate + "T00:00:00");
   const end = new Date(endDate + "T00:00:00");
   const dates = [];
@@ -25,6 +34,7 @@ function buildRows(employees = [], startDate, endDate) {
     const assignments = dates.map((date, i) => {
       let code = getShiftCodeForEmployee(emp, i + empIndex);
       if (Number(emp.employmentPct) <= 82 && code === "D" && i % 4 === 0) code = "L";
+      if (shouldForceOff(emp, preferences, date, i)) code = "L";
       return { date, code };
     });
 
@@ -40,7 +50,7 @@ function buildRows(employees = [], startDate, endDate) {
   });
 }
 
-function buildDiagnostics(rows) {
+function buildDiagnostics(rows, preferences = []) {
   const deviations = [];
   rows.forEach((row) => {
     const weekendCount = row.assignments.filter((a) => a.code === "H").length;
@@ -49,6 +59,14 @@ function buildDiagnostics(rows) {
         severity: "medium",
         employeeName: row.employeeName,
         message: `${row.employeeName} har relativt hög helgbelastning i backend-genereringen.`
+      });
+    }
+    const pref = (preferences || []).find((p) => p.employeeId === row.employeeId);
+    if (pref && ((pref.preferredOffDays || []).length > 0 || (pref.fixedTimeOff || []).length > 0)) {
+      deviations.push({
+        severity: "low",
+        employeeName: row.employeeName,
+        message: `${row.employeeName} har preferenser som vägts in i backend-genereringen.`
       });
     }
   });
@@ -66,11 +84,12 @@ router.post("/generate", async (req, res) => {
   try {
     const body = req.body || {};
     const employees = body.employees || [];
+    const preferences = body.preferences || [];
     const startDate = body.startDate || "2026-09-01";
     const endDate = body.endDate || "2026-12-31";
 
-    const rows = buildRows(employees, startDate, endDate);
-    const diagnostics = buildDiagnostics(rows);
+    const rows = buildRows(employees, startDate, endDate, preferences);
+    const diagnostics = buildDiagnostics(rows, preferences);
 
     res.json({
       rows,
@@ -80,7 +99,8 @@ router.post("/generate", async (req, res) => {
         mode: "backend",
         startDate,
         endDate,
-        employeeCount: employees.length
+        employeeCount: employees.length,
+        preferenceCount: preferences.length
       }
     });
   } catch (error) {
