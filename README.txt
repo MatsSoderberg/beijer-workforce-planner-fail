@@ -1,12 +1,19 @@
-Det här paketet är en build-säker återställning för Copilot.
+Den här patchen lägger till smart validering direkt i EmployeeGrid.
 
-Det ersätter:
-- frontend/src/App.jsx
-- frontend/src/components/StaffingCopilotBackend.jsx
+Nytt:
+- varning om namn saknas
+- varning om ogiltig avdelning
+- varning om felaktig eller extrem sysselsättningsgrad
+- varning om kväll-only på tveksamma kombinationer
+- sammanfattande varningar för avdelningar utan medarbetare
+- tydlig status: validering kräver åtgärd / inga valideringsfel
 
-Målet är att:
-1. bygget ska gå igenom
-2. Copilot-fliken ska synas
-3. Copilot ska fungera i ett säkert fallback-läge utan backendberoenden
+Filer:
+- frontend/src/components/EmployeeGrid.jsx
+- styles.append.txt
 
-När detta väl fungerar visuellt kan nästa steg vara att återkoppla backend-Copilot stegvis.
+För att använda:
+1. Lägg in EmployeeGrid.jsx
+2. Lägg till CSS från styles.append.txt i din styles.css
+3. Rendera komponenten i wizarden:
+   <EmployeeGrid employees={employees} setEmployees={setEmployees} />

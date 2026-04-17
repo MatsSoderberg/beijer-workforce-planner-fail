@@ -1,6 +1,104 @@
 
-.chat-meta {
-  margin-top: 8px;
-  font-size: 12px;
+.grid-table {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.grid-header,
+.grid-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 90px 80px 60px;
+  gap: 10px;
+  align-items: center;
+}
+
+.grid-header {
+  font-weight: 600;
   color: var(--muted);
+  padding: 0 4px;
+}
+
+.grid-row-wrap {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  padding: 10px;
+}
+
+.grid-row-wrap.has-errors {
+  border-color: rgba(251,191,36,0.32);
+  background: rgba(251,191,36,0.06);
+}
+
+.grid-row input,
+.grid-row select {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 10px;
+  color: var(--text);
+}
+
+.grid-check {
+  display: flex;
+  justify-content: center;
+}
+
+.grid-delete-btn {
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 10px 0;
+}
+
+.row-validation-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.row-validation-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.validation-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.employee-grid-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.validation-badge {
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid var(--stroke);
+}
+
+.validation-badge.warning {
+  background: rgba(251,191,36,0.10);
+  color: #fcd34d;
+}
+
+.validation-badge.ok {
+  background: rgba(74,222,128,0.10);
+  color: #86efac;
+}
+
+@media (max-width: 820px) {
+  .grid-header,
+  .grid-row {
+    grid-template-columns: 1fr;
+  }
 }
