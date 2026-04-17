@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import EmployeeGrid from './EmployeeGrid';
 
 const stepOrder = ['store', 'period', 'staffing', 'rules', 'generate', 'review', 'publish'];
-
-const STORAGE_KEY = 'beijer_wizard_nacka_v1';
+const STORAGE_KEY = 'beijer_wizard_nacka_v2';
 
 const defaultState = {
   currentStep: 0,
@@ -29,7 +29,7 @@ function NumberField({ label, value, onChange }) {
   );
 }
 
-export default function EditableSchedulingWizard() {
+export default function EditableSchedulingWizard({ employees = [], setEmployees }) {
   const [state, setState] = useState(defaultState);
   const [loading, setLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -66,6 +66,7 @@ export default function EditableSchedulingWizard() {
             staffing: state.staffing,
             rules: state.rules,
             status: 'generated',
+            employeeCount: employees.length,
           },
         };
         persist({ ...state, latestGenerated: generated, currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1) });
@@ -107,21 +108,26 @@ export default function EditableSchedulingWizard() {
       </div>
     ),
     staffing: (
-      <div className="grid two">
-        <div className="card feature-card compact">
-          <div className="section-title">Vardag</div>
-          <div className="stack top-gap">
-            <NumberField label="Kassa" value={state.staffing.weekday.Kassa} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Kassa: v } } })} />
-            <NumberField label="Färg" value={state.staffing.weekday.Farg} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Farg: v } } })} />
-            <NumberField label="Järn" value={state.staffing.weekday.Jarn} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Jarn: v } } })} />
+      <div className="stack">
+        <EmployeeGrid employees={employees} setEmployees={setEmployees} />
+
+        <div className="grid two">
+          <div className="card feature-card compact">
+            <div className="section-title">Vardag</div>
+            <div className="stack top-gap">
+              <NumberField label="Kassa" value={state.staffing.weekday.Kassa} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Kassa: v } } })} />
+              <NumberField label="Färg" value={state.staffing.weekday.Farg} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Farg: v } } })} />
+              <NumberField label="Järn" value={state.staffing.weekday.Jarn} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Jarn: v } } })} />
+            </div>
           </div>
-        </div>
-        <div className="card feature-card compact">
-          <div className="section-title">Helg</div>
-          <div className="stack top-gap">
-            <NumberField label="Kassa" value={state.staffing.weekend.Kassa} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Kassa: v } } })} />
-            <NumberField label="Färg" value={state.staffing.weekend.Farg} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Farg: v } } })} />
-            <NumberField label="Järn" value={state.staffing.weekend.Jarn} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Jarn: v } } })} />
+
+          <div className="card feature-card compact">
+            <div className="section-title">Helg</div>
+            <div className="stack top-gap">
+              <NumberField label="Kassa" value={state.staffing.weekend.Kassa} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Kassa: v } } })} />
+              <NumberField label="Färg" value={state.staffing.weekend.Farg} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Farg: v } } })} />
+              <NumberField label="Järn" value={state.staffing.weekend.Jarn} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Jarn: v } } })} />
+            </div>
           </div>
         </div>
       </div>
@@ -136,7 +142,7 @@ export default function EditableSchedulingWizard() {
     generate: (
       <div className="card callout shimmer">
         <div className="section-title">Generera schema</div>
-        <div className="muted">Wizarden är nu redigerbar och sparbar. Nästa steg genererar ett schemautkast baserat på vald period och bemanning.</div>
+        <div className="muted">Wizarden använder nu aktuell medarbetarlista. Lägg till eller ta bort medarbetare i steget Bemanning innan du genererar.</div>
       </div>
     ),
     review: (

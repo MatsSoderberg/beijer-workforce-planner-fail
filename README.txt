@@ -1,19 +1,18 @@
-Den här patchen lägger till smart validering direkt i EmployeeGrid.
+Det här är nästa steg efter valideringen.
 
-Nytt:
-- varning om namn saknas
-- varning om ogiltig avdelning
-- varning om felaktig eller extrem sysselsättningsgrad
-- varning om kväll-only på tveksamma kombinationer
-- sammanfattande varningar för avdelningar utan medarbetare
-- tydlig status: validering kräver åtgärd / inga valideringsfel
+Nu kopplas medarbetargriden till wizardens riktiga state:
+- medarbetare ligger i App.jsx state
+- wizarden får employees + setEmployees som props
+- EmployeeGrid renderas i wizardens Bemanning-steg
+- lägga till och ta bort medarbetare fungerar direkt i flödet
 
-Filer:
+Det betyder att svaret på din fråga är: ja.
+När denna patch är inne kan du lägga till och ta bort medarbetare i wizarden.
+
+Ersätt:
+- frontend/src/App.jsx
+- frontend/src/components/EditableSchedulingWizard.jsx
+
+Förutsätter att du redan har:
 - frontend/src/components/EmployeeGrid.jsx
-- styles.append.txt
-
-För att använda:
-1. Lägg in EmployeeGrid.jsx
-2. Lägg till CSS från styles.append.txt i din styles.css
-3. Rendera komponenten i wizarden:
-   <EmployeeGrid employees={employees} setEmployees={setEmployees} />
+- CSS från employee-grid-validation-patch i styles.css

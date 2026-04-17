@@ -7,7 +7,7 @@ import { getSession, logout } from './lib/auth';
 
 const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
-const employees = [
+const defaultEmployees = [
   { id: 'david', name: 'David', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
   { id: 'hakan', name: 'Håkan', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
   { id: 'katarina', name: 'Katarina', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
@@ -124,6 +124,7 @@ function Dashboard() {
 function EngineView() {
   const [active, setActive] = useState(3);
   const avgScore = useMemo(() => Math.round(engineStages.reduce((a, b) => a + b.score, 0) / engineStages.length), []);
+
   return (
     <div className="split-layout">
       <div className="card">
@@ -159,15 +160,29 @@ function EngineView() {
   );
 }
 
-function PreferencesView() {
-  const [selectedId, setSelectedId] = useState(employees[0].id);
+function PreferencesView({ employees }) {
+  const [selectedId, setSelectedId] = useState(employees[0]?.id || '');
   const [preferences, setPreferences] = useState(initialPreferences);
   const [saveTick, setSaveTick] = useState(0);
-  const selectedEmployee = employees.find((e) => e.id === selectedId);
+  const selectedEmployee = employees.find((e) => e.id === selectedId) || employees[0];
+
+  useEffect(() => {
+    if (!selectedEmployee && employees[0]) setSelectedId(employees[0].id);
+  }, [employees, selectedEmployee]);
 
   function handleSave(nextPref) {
-    setPreferences((prev) => ({ ...prev, [selectedId]: nextPref }));
+    if (!selectedEmployee) return;
+    setPreferences((prev) => ({ ...prev, [selectedEmployee.id]: nextPref }));
     setSaveTick((x) => x + 1);
+  }
+
+  if (!selectedEmployee) {
+    return (
+      <div className="card">
+        <div className="section-title">Personliga önskemål</div>
+        <div className="muted">Lägg till minst en medarbetare i wizarden först.</div>
+      </div>
+    );
   }
 
   return (
@@ -179,7 +194,7 @@ function PreferencesView() {
           {employees.map((e) => (
             <button key={e.id} className={`employee-list-item ${selectedId === e.id ? 'active' : ''}`} onClick={() => setSelectedId(e.id)}>
               <div>
-                <div className="employee-name">{e.name}</div>
+                <div className="employee-name">{e.name || 'Namnlös medarbetare'}</div>
                 <div className="muted small">{e.department} · {e.employmentPct}% {e.eveningOnly ? '· kväll endast' : ''}</div>
               </div>
             </button>
@@ -195,8 +210,8 @@ function PreferencesView() {
           <div className="save-pill">Sparade ändringar: {saveTick}</div>
         </div>
         <PersonalPreferencesForm
-          employeeName={selectedEmployee.name}
-          value={preferences[selectedId] || { preferredOffDays: [], preferredWorkDays: [], fixedTimeOff: [], notes: '' }}
+          employeeName={selectedEmployee.name || 'Medarbetare'}
+          value={preferences[selectedEmployee.id] || { preferredOffDays: [], preferredWorkDays: [], fixedTimeOff: [], notes: '' }}
           onSave={handleSave}
         />
       </section>
@@ -229,6 +244,7 @@ function PersonalView() {
 export default function App() {
   const [session, setSession] = useState(null);
   const [view, setView] = useState('dashboard');
+  const [employees, setEmployees] = useState(defaultEmployees);
 
   useEffect(() => {
     setSession(getSession());
@@ -268,8 +284,8 @@ export default function App() {
         </nav>
 
         {role === 'chef' && activeView === 'dashboard' && <Dashboard />}
-        {role === 'chef' && activeView === 'wizard' && <EditableSchedulingWizard />}
-        {role === 'chef' && activeView === 'preferences' && <PreferencesView />}
+        {role === 'chef' && activeView === 'wizard' && <EditableSchedulingWizard employees={employees} setEmployees={setEmployees} />}
+        {role === 'chef' && activeView === 'preferences' && <PreferencesView employees={employees} />}
         {activeView === 'engine' && <EngineView />}
         {role === 'chef' && activeView === 'copilot' && <StaffingCopilotBackend />}
         {role === 'personal' && activeView === 'personal' && <PersonalView />}
