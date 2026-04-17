@@ -3,6 +3,7 @@ import LoginScreen from './components/LoginScreen';
 import EditableSchedulingWizard from './components/EditableSchedulingWizard';
 import PersonalPreferencesForm from './components/PersonalPreferencesForm';
 import StaffingCopilotBackend from './components/StaffingCopilotBackend';
+import GeneratedSchedulePreview from './components/GeneratedSchedulePreview';
 import { getSession, logout } from './lib/auth';
 
 const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
@@ -40,7 +41,7 @@ const initialPreferences = {
   },
 };
 
-const schedule = [
+const dashboardSchedule = [
   { name: 'David', dept: 'Kassa', week: ['T', 'D', 'L', 'K', 'D', 'H', 'L'], hours: 40, deviations: 1 },
   { name: 'Håkan', dept: 'Kassa', week: ['D', 'K', 'D', 'L', 'T', 'L', 'L'], hours: 40, deviations: 0 },
   { name: 'Pia', dept: 'Kassa', week: ['K', 'L', 'K', 'L', 'K', 'L', 'L'], hours: 25, deviations: 0 },
@@ -72,7 +73,7 @@ function PassPill({ code }) {
   return <div className={`pass-pill pass-${code.toLowerCase()}`}>{code}</div>;
 }
 
-function Dashboard() {
+function Dashboard({ generatedSchedule }) {
   return (
     <div className="main-layout">
       <div className="stack">
@@ -82,6 +83,7 @@ function Dashboard() {
           <KPI title="Avvikelser" value="2" sub="1 prioriterad" />
           <KPI title="Period" value="Sep–Dec" sub="18 veckor" />
         </div>
+
         <div className="card">
           <div className="section-title">Publicerat schema</div>
           <div className="muted">Chefsvy vecka 41 med timmar och avvikelser direkt i tabellen.</div>
@@ -92,7 +94,7 @@ function Dashboard() {
               <div>Timmar</div>
               <div>Avv.</div>
             </div>
-            {schedule.map((row) => (
+            {dashboardSchedule.map((row) => (
               <div key={row.name} className="schedule-row">
                 <div className="employee-card">
                   <div className="employee-name">{row.name}</div>
@@ -105,7 +107,10 @@ function Dashboard() {
             ))}
           </div>
         </div>
+
+        <GeneratedSchedulePreview generated={generatedSchedule} />
       </div>
+
       <div className="stack">
         <div className="card">
           <div className="section-title">Avvikelsepanel</div>
@@ -124,7 +129,6 @@ function Dashboard() {
 function EngineView() {
   const [active, setActive] = useState(3);
   const avgScore = useMemo(() => Math.round(engineStages.reduce((a, b) => a + b.score, 0) / engineStages.length), []);
-
   return (
     <div className="split-layout">
       <div className="card">
@@ -245,6 +249,7 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [view, setView] = useState('dashboard');
   const [employees, setEmployees] = useState(defaultEmployees);
+  const [generatedSchedule, setGeneratedSchedule] = useState(null);
 
   useEffect(() => {
     setSession(getSession());
@@ -283,11 +288,11 @@ export default function App() {
           ))}
         </nav>
 
-        {role === 'chef' && activeView === 'dashboard' && <Dashboard />}
-        {role === 'chef' && activeView === 'wizard' && <EditableSchedulingWizard employees={employees} setEmployees={setEmployees} />}
+        {role === 'chef' && activeView === 'dashboard' && <Dashboard generatedSchedule={generatedSchedule} />}
+        {role === 'chef' && activeView === 'wizard' && <EditableSchedulingWizard employees={employees} setEmployees={setEmployees} onGenerated={setGeneratedSchedule} />}
         {role === 'chef' && activeView === 'preferences' && <PreferencesView employees={employees} />}
         {activeView === 'engine' && <EngineView />}
-        {role === 'chef' && activeView === 'copilot' && <StaffingCopilotBackend />}
+        {role === 'chef' && activeView === 'copilot' && <StaffingCopilotBackend generated={generatedSchedule} />}
         {role === 'personal' && activeView === 'personal' && <PersonalView />}
       </div>
     </div>
