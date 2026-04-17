@@ -1,4 +1,3 @@
-import WeeklyScheduleBrowser from './components/WeeklyScheduleBrowser';
 import React, { useMemo, useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import EditableSchedulingWizard from './components/EditableSchedulingWizard';
@@ -175,8 +174,6 @@ export default function App() {
         </nav>
 
         {role === 'chef' && view === 'dashboard' && <Dashboard generatedSchedule={generatedSchedule} employees={employees} />}
-  </>
-)}
         {role === 'chef' && view === 'wizard' && (
           <EditableSchedulingWizard
             employees={employees}
