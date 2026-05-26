@@ -175,12 +175,13 @@ export default function App() {
 
         {role === 'chef' && view === 'dashboard' && <Dashboard generatedSchedule={generatedSchedule} employees={employees} />}
         {role === 'chef' && view === 'wizard' && (
-          <EditableSchedulingWizard
-            employees={employees}
-            setEmployees={setEmployees}
-            preferences={preferences}
-            onGenerated={setGeneratedSchedule}
-          />
+         <EditableSchedulingWizard
+  employees={employees}
+  setEmployees={setEmployees}
+  preferences={preferences}
+  setPreferences={setPreferences}
+  onGenerated={setGeneratedSchedule}
+/>
         )}
         {role === 'chef' && view === 'preferences' && (
           <PreferencesView employees={employees} preferences={preferences} setPreferences={setPreferences} />
