@@ -1,3 +1,4 @@
+import { importRulesFromText } from '../lib/importRulesFromText';
 import React, { useEffect, useMemo, useState } from 'react';
 import EmployeeGrid from './EmployeeGrid';
 import { generateScheduleFromBackend, generateScheduleFallback } from '../lib/scheduleApi';
@@ -40,7 +41,7 @@ function mapPreferences(preferences = {}) {
   }));
 }
 
-export default function EditableSchedulingWizard({ employees = [], setEmployees, preferences = {}, onGenerated }) {
+export default function EditableSchedulingWizard({ employees = [], setEmployees, preferences = {}, setPreferences, onGenerated }) {
   const [state, setState] = useState(defaultState);
   const [loading, setLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -70,6 +71,8 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
     const kassa = employees.filter((e) => e.department === 'Kassa').length;
     const farg = employees.filter((e) => e.department === 'Färg').length;
     const jarn = employees.filter((e) => e.department === 'Järn').length;
+    const [importText, setImportText] = useState('');
+const [importResult, setImportResult] = useState(null);
     return { total, kassa, farg, jarn };
   }, [employees]);
 
@@ -138,6 +141,20 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
     setSaveMessage('Schema publicerat');
     setTimeout(() => setSaveMessage(''), 1500);
   }
+  function handleImportRules() {
+  const result = importRulesFromText(importText, employees);
+  setImportResult(result);
+
+  if (setPreferences) {
+    setPreferences((prev) => ({
+      ...prev,
+      ...result.preferencesPatch,
+    }));
+  }
+
+  setSaveMessage(`Importerade ${result.employeeRules.length} individuella regler`);
+  setTimeout(() => setSaveMessage(''), 1800);
+}
 
   const content = {
     store: (
@@ -195,6 +212,37 @@ export default function EditableSchedulingWizard({ employees = [], setEmployees,
         <label className="rule-card spread"><span>Ta hänsyn till personliga önskemål</span><input type="checkbox" checked={state.rules.honorPreferences} onChange={(e) => persist({ ...state, rules: { ...state.rules, honorPreferences: e.target.checked } })} /></label>
       </div>
     ),
+
+    <div className="card feature-card compact">
+  <div className="section-title">Importera schemaönskemål</div>
+  <div className="muted">
+    Klistra in text från dokumentet. Systemet delar upp innehållet i avdelningsregler,
+    individuella önskemål och generella regler.
+  </div>
+
+  <textarea
+    className="pref-input"
+    style={{ minHeight: 180, marginTop: 12 }}
+    value={importText}
+    onChange={(e) => setImportText(e.target.value)}
+    placeholder="Klistra in schemaönskemål här..."
+  />
+
+  <button className="btn primary" onClick={handleImportRules} style={{ marginTop: 12 }}>
+    Importera schemaönskemål
+  </button>
+
+  {importResult ? (
+    <div className="top-gap">
+      <div className="save-pill">
+        {importResult.employeeRules.length} individuella regler ·{" "}
+        {importResult.departmentRules.length} avdelningsregler ·{" "}
+        {importResult.generalRules.length} generella regler
+      </div>
+    </div>
+  ) : null}
+
+    </div>
     generate: (
       <div className="stack">
         <div className="card callout shimmer">
