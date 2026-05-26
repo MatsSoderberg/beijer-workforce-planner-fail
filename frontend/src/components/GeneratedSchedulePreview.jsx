@@ -1,4 +1,5 @@
 import React from 'react';
+import { exportScheduleToExcel } from '../lib/exportScheduleExcel';
 
 function codeToLabel(code) {
   if (code === 'H') return 'Helg';
@@ -26,6 +27,15 @@ export default function GeneratedSchedulePreview({ generated }) {
     <div className="card">
       <div className="section-title">Genererat schema</div>
       <div className="muted">Förhandsvisning baserad på aktuell medarbetarlista och preferenser.</div>
+
+      <div style={{ marginTop: 16, marginBottom: 16 }}>
+  <button
+    className="btn primary"
+    onClick={() => exportScheduleToExcel(generated)}
+  >
+    📊 Exportera till Excel
+  </button>
+</div>
 
       <div className="schedule-wrap top-gap">
         <div className="schedule-head">
