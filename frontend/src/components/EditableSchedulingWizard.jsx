@@ -1,8 +1,10 @@
+import { importRulesFromText, mergeImportedPreferences } from '../lib/importRulesFromText';
 import React, { useEffect, useMemo, useState } from 'react';
 import EmployeeGrid from './EmployeeGrid';
 import { generateScheduleFromBackend, generateScheduleFallback } from '../lib/scheduleApi';
 import { importRulesFromText } from '../lib/importRulesFromText';
-
+const [importPackageName, setImportPackageName] = useState('');
+const [importedRulePackages, setImportedRulePackages] = useState([]);
 const stepOrder = ['store', 'period', 'staffing', 'rules', 'generate', 'review', 'publish'];
 const STORAGE_KEY = 'beijer_wizard_nacka_v6';
 
