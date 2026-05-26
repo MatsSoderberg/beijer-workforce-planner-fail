@@ -421,6 +421,14 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
             avdelningsregler, individuella önskemål och generella regler.
           </div>
 
+          <input
+  className="pref-input"
+  style={{ marginTop: 12 }}
+  value={importPackageName}
+  onChange={(e) => setImportPackageName(e.target.value)}
+  placeholder="Namn på regelpaket, t.ex. Färg/Järn eller Kassa"
+/>
+          
           <textarea
             className="pref-input"
             style={{ minHeight: 180, marginTop: 12 }}
@@ -446,6 +454,26 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
               </div>
             </div>
           ) : null}
+          {importedRulePackages.length > 0 ? (
+  <div className="top-gap">
+    <div className="section-title">Aktiva regelpaket</div>
+    {importedRulePackages.map((pkg) => (
+      <div key={pkg.id} className="rule-card spread">
+        <span>
+          {pkg.name} · {pkg.department} · {pkg.employeeRules.length} individuella regler
+        </span>
+        <button
+          className="btn ghost"
+          onClick={() =>
+            setImportedRulePackages((prev) => prev.filter((p) => p.id !== pkg.id))
+          }
+        >
+          Ta bort
+        </button>
+      </div>
+    ))}
+  </div>
+) : null}
         </div>
       </div>
     ),
