@@ -479,9 +479,12 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
       </div>
     ))}
   </div>
-) : null}
-        </div>
-    ),
+        ) : null}
+      </div>
+    </div>
+  ),
+
+    generate: (
 
     generate: (
       <div className="stack">
