@@ -60,3 +60,6 @@ export async function initDb() {
 
   console.log("✅ Database initialized");
 }
+export function getDb() {
+  return pool;
+}
