@@ -107,7 +107,7 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(frontendDist, 'index.html'));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 
 async function start() {
   try {
