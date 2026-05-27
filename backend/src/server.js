@@ -165,4 +165,68 @@ app.post("/api/planner-state", async (req, res) => {
     res.status(500).json({ error: "Failed to save planner state" });
   }
 });
+app.get("/api/rule-packages", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, department, payload, imported_at
+      FROM rule_packages
+      ORDER BY imported_at DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Failed to load rule packages", err);
+    res.status(500).json({ error: "Failed to load rule packages" });
+  }
+});
+
+app.post("/api/rule-packages", async (req, res) => {
+  try {
+    const pkg = req.body;
+
+    await pool.query(
+      `
+      INSERT INTO rule_packages (
+        id,
+        name,
+        department,
+        payload,
+        imported_at
+      )
+      VALUES ($1, $2, $3, $4, NOW())
+      ON CONFLICT (id)
+      DO UPDATE SET
+        name = EXCLUDED.name,
+        department = EXCLUDED.department,
+        payload = EXCLUDED.payload,
+        imported_at = NOW()
+      `,
+      [
+        pkg.id,
+        pkg.name || "Namnlöst regelpaket",
+        pkg.department || "Okänd avdelning",
+        pkg,
+      ]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to save rule package", err);
+    res.status(500).json({ error: "Failed to save rule package" });
+  }
+});
+
+app.delete("/api/rule-packages/:id", async (req, res) => {
+  try {
+    await pool.query(
+      `DELETE FROM rule_packages WHERE id = $1`,
+      [req.params.id]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to delete rule package", err);
+    res.status(500).json({ error: "Failed to delete rule package" });
+  }
+});
 start();
