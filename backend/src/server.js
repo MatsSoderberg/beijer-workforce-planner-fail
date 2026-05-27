@@ -139,7 +139,28 @@ app.get("/api/planner-state", async (req, res) => {
 
 app.post("/api/planner-state", async (req, res) => {
   try {
-    const payload = req.body;
+    const incoming = req.body || {};
+
+    const latest = await pool.query(`
+      SELECT generated_json
+      FROM generated_schedules
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+
+    const previous = latest.rows[0]?.generated_json || {};
+
+    const payload = {
+      ...previous,
+      ...incoming,
+      employees: incoming.employees || previous.employees || [],
+      preferences: incoming.preferences || previous.preferences || {},
+      generatedSchedule:
+        incoming.generatedSchedule !== undefined
+          ? incoming.generatedSchedule
+          : previous.generatedSchedule || null,
+      savedAt: new Date().toISOString(),
+    };
 
     await pool.query(
       `
@@ -152,12 +173,19 @@ app.post("/api/planner-state", async (req, res) => {
       VALUES ($1, $2, $3, $4)
       `,
       [
-        payload?.period?.startDate || null,
-        payload?.period?.endDate || null,
+        payload?.period?.startDate || payload?.generatedSchedule?.metadata?.startDate || null,
+        payload?.period?.endDate || payload?.generatedSchedule?.metadata?.endDate || null,
         payload,
         false,
       ]
     );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to save planner state", err);
+    res.status(500).json({ error: "Failed to save planner state" });
+  }
+});
 
     res.json({ ok: true });
   } catch (err) {
