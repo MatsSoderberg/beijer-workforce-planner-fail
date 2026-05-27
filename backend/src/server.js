@@ -122,6 +122,8 @@ async function start() {
     process.exit(1);
   }
 }
+
+start();
 import { pool } from "./db.js";
 app.get("/api/planner-state", async (req, res) => {
   try {
