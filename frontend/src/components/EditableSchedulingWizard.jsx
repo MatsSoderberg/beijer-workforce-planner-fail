@@ -83,15 +83,21 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
   }
 
   function handleImportRules() {
-    const result = importRulesFromText(importText, employees);
-    setImportResult(result);
+  const result = importRulesFromText(importText, employees, importPackageName);
+  setImportResult(result);
 
-    if (setPreferences) {
-      setPreferences((prev) => ({
-        ...prev,
-        ...result.preferencesPatch,
-      }));
-    }
+  setImportedRulePackages((prev) => [...prev, result]);
+
+  if (setPreferences) {
+    setPreferences((prev) => mergeImportedPreferences(prev, result.preferencesPatch));
+  }
+
+  setImportText('');
+  setImportPackageName('');
+
+  setSaveMessage(`Importerade ${result.name}: ${result.employeeRules.length} individuella regler`);
+  setTimeout(() => setSaveMessage(''), 1800);
+}
 
     setSaveMessage(`Importerade ${result.employeeRules.length} individuella regler`);
     setTimeout(() => setSaveMessage(''), 1800);
