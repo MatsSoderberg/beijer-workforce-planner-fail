@@ -5,6 +5,7 @@ import PersonalPreferencesForm from './components/PersonalPreferencesForm';
 import StaffingCopilotBackend from './components/StaffingCopilotBackend';
 import GeneratedSchedulePreview from './components/GeneratedSchedulePreview';
 import { getSession, logout } from './lib/auth';
+import { loadPlannerState, savePlannerState } from './lib/plannerStateApi';
 
 const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
@@ -137,10 +138,43 @@ export default function App() {
   const [employees, setEmployees] = useState(defaultEmployees);
   const [generatedSchedule, setGeneratedSchedule] = useState(null);
   const [preferences, setPreferences] = useState(initialPreferences);
+  const [dbStatus, setDbStatus] = useState('Ej laddad');
 
   useEffect(() => {
     setSession(getSession());
   }, []);
+  useEffect(() => {
+  async function loadFromDb() {
+    try {
+      const saved = await loadPlannerState();
+
+      if (saved?.employees) setEmployees(saved.employees);
+      if (saved?.preferences) setPreferences(saved.preferences);
+      if (saved?.generatedSchedule) setGeneratedSchedule(saved.generatedSchedule);
+
+      setDbStatus(saved ? 'Laddad från databas' : 'Ingen sparad databasdata');
+    } catch (err) {
+      console.warn('Could not load planner state from database', err);
+      setDbStatus('Kunde inte ladda från databas');
+    }
+  }
+
+  loadFromDb();
+}, []);
+  useEffect(() => {
+  const timer = setTimeout(() => {
+    savePlannerState({
+      employees,
+      preferences,
+      generatedSchedule,
+      savedAt: new Date().toISOString(),
+    }).catch((err) => {
+      console.warn('Could not save planner state to database', err);
+    });
+  }, 1200);
+
+  return () => clearTimeout(timer);
+}, [employees, preferences, generatedSchedule]);
 
   if (!session) return <LoginScreen onLogin={(user) => setSession(user)} />;
 
@@ -163,6 +197,7 @@ export default function App() {
           </div>
           <div className="hero-right">
             <div className="hero-chip">{session.name} · {role === 'chef' ? 'Chefsvy' : 'Personalvy'}</div>
+            <div className="hero-chip">DB: {dbStatus}</div>
             <button className="hero-chip" onClick={() => { logout(); setSession(null); }}>Logga ut</button>
           </div>
         </header>
