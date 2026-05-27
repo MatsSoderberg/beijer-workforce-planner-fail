@@ -222,7 +222,7 @@ useEffect(() => {
   setEmployees={setEmployees}
   preferences={preferences}
   setPreferences={setPreferences}
-  onGenerated={setGeneratedSchedule}
+  onGenerated={handleGeneratedSchedule}
 />
         )}
         {role === 'chef' && view === 'preferences' && (
