@@ -10,6 +10,10 @@ export const pool = new Pool({
       : false,
 });
 
+export function getDb() {
+  return pool;
+}
+
 export async function initDb() {
   await pool.query(`
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -60,9 +64,7 @@ export async function initDb() {
 
   console.log("✅ Database initialized");
 }
-export function getDb() {
-  return pool;
-}
+
 export async function resetDatabase() {
   await pool.query(`
     DROP TABLE IF EXISTS generated_schedules;
