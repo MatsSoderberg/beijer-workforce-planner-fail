@@ -351,7 +351,15 @@ export default function EditableSchedulingWizard({
                   </span>
                   <button
                     className="btn ghost"
-                    onClick={() => setImportedRulePackages((prev) => prev.filter((p) => p.id !== pkg.id))}
+                    onClick={async () => {
+  setImportedRulePackages((prev) => prev.filter((p) => p.id !== pkg.id));
+
+  try {
+    await deleteRulePackage(pkg.id);
+  } catch (err) {
+    console.warn('Could not delete rule package', err);
+  }
+}}
                   >
                     Ta bort
                   </button>
