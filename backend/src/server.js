@@ -6,7 +6,7 @@ import { login, requireAuth, requireChef } from './auth.js';
 import { getState, updateSection, addEmployee, addTimeOff, saveSchedule, publishRun } from './repository.js';
 import { generateSchedule, scheduleSummary } from './scheduler.js';
 import { getDb, resetDatabase } from './db.js';
-import { initDb } from "./db.js";
+import { initDb, pool } from "./db.js";
 
 await getDb();
 const app = express();
@@ -122,5 +122,49 @@ async function start() {
     process.exit(1);
   }
 }
+import { pool } from "./db.js";
+app.get("/api/planner-state", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT generated_json
+      FROM generated_schedules
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
 
+    res.json(result.rows[0]?.generated_json || null);
+  } catch (err) {
+    console.error("Failed to load planner state", err);
+    res.status(500).json({ error: "Failed to load planner state" });
+  }
+});
+
+app.post("/api/planner-state", async (req, res) => {
+  try {
+    const payload = req.body;
+
+    await pool.query(
+      `
+      INSERT INTO generated_schedules (
+        start_date,
+        end_date,
+        generated_json,
+        published
+      )
+      VALUES ($1, $2, $3, $4)
+      `,
+      [
+        payload?.period?.startDate || null,
+        payload?.period?.endDate || null,
+        payload,
+        false,
+      ]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to save planner state", err);
+    res.status(500).json({ error: "Failed to save planner state" });
+  }
+});
 start();
