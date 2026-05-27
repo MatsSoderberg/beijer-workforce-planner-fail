@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "25mb" }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.post('/api/auth/login', async (req, res) => {
