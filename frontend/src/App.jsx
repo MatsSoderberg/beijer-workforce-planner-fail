@@ -141,13 +141,11 @@ export default function App() {
   const [dbStatus, setDbStatus] = useState('Ej laddad');
   const [plannerLoaded, setPlannerLoaded] = useState(false);
 
-  useEffect(() => {
-    setSession(getSession());
-  }, []);
-  useEffect(() => {
+useEffect(() => {
   setSession(getSession());
 }, []);
-  useEffect(() => {
+
+useEffect(() => {
   async function loadFromDb() {
     try {
       const saved = await loadPlannerState();
@@ -167,6 +165,10 @@ export default function App() {
 
   loadFromDb();
 }, []);
+
+useEffect(() => {
+  if (!plannerLoaded) return;
+
   const timer = setTimeout(() => {
     savePlannerState({
       employees,
@@ -179,7 +181,7 @@ export default function App() {
   }, 1200);
 
   return () => clearTimeout(timer);
-}, [employees, preferences, generatedSchedule]);
+}, [plannerLoaded, employees, preferences, generatedSchedule]);
 
   if (!session) return <LoginScreen onLogin={(user) => setSession(user)} />;
 
