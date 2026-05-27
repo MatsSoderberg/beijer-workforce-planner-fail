@@ -86,7 +86,20 @@ function PreferencesView({ employees, preferences, setPreferences }) {
     }));
     setSaveTick((x) => x + 1);
   }
+async function handleGeneratedSchedule(generated) {
+  setGeneratedSchedule(generated);
 
+  try {
+    await savePlannerState({
+      employees,
+      preferences,
+      generatedSchedule: generated,
+      savedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('Could not save generated schedule to database', err);
+  }
+}
   if (!selectedEmployee) {
     return (
       <div className="card" style={{ marginTop: 20 }}>
@@ -212,11 +225,12 @@ export default function App() {
 
         {role === 'chef' && view === 'wizard' && (
           <EditableSchedulingWizard
-            employees={employees}
-            setEmployees={setEmployees}
-            preferences={preferences}
-            onGenerated={setGeneratedSchedule}
-          />
+  employees={employees}
+  setEmployees={setEmployees}
+  preferences={preferences}
+  setPreferences={setPreferences}
+  onGenerated={handleGeneratedSchedule}
+/>
         )}
 
         {role === 'chef' && view === 'preferences' && (
