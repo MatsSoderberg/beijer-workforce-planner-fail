@@ -119,7 +119,6 @@ async function start() {
   }
 }
 
-start();
 app.get("/api/planner-state", async (req, res) => {
   try {
     const result = await pool.query(`
