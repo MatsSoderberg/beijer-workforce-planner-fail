@@ -123,7 +123,6 @@ async function start() {
 }
 
 start();
-import { pool } from "./db.js";
 app.get("/api/planner-state", async (req, res) => {
   try {
     const result = await pool.query(`
