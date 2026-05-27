@@ -12,9 +12,15 @@
     "start": "npm run start -w backend",
     "seed": "npm run seed -w backend"
   },
+
+  "dependencies": {
+    "pg": "^8.13.1"
+  },
+
   "devDependencies": {
     "concurrently": "^9.0.1"
   },
+
   "engines": {
     "node": ">=20"
   }
