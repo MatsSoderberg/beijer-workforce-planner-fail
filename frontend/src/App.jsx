@@ -97,20 +97,6 @@ function PreferencesView({ employees, preferences, setPreferences }) {
       </div>
     );
   }
-async function handleGeneratedSchedule(generated) {
-  setGeneratedSchedule(generated);
-
-  try {
-    await savePlannerState({
-      employees,
-      preferences,
-      generatedSchedule: generated,
-      savedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.warn('Could not save generated schedule to database', err);
-  }
-}
   
   return (
     <div className="preferences-layout">
@@ -176,6 +162,20 @@ useEffect(() => {
       setPlannerLoaded(true);
     }
   }
+async function handleGeneratedSchedule(generated) {
+  setGeneratedSchedule(generated);
+
+  try {
+    await savePlannerState({
+      employees,
+      preferences,
+      generatedSchedule: generated,
+      savedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.warn('Could not save generated schedule to database', err);
+  }
+}
 
   loadFromDb();
 }, []);
