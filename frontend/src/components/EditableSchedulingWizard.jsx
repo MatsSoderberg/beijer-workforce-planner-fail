@@ -1,3 +1,4 @@
+import { loadRulePackages, saveRulePackage, deleteRulePackage } from '../lib/rulePackageApi';
 import React, { useEffect, useMemo, useState } from 'react';
 import EmployeeGrid from './EmployeeGrid';
 import { generateScheduleFromBackend, generateScheduleFallback } from '../lib/scheduleApi';
@@ -58,6 +59,19 @@ export default function EditableSchedulingWizard({
   const [importedRulePackages, setImportedRulePackages] = useState([]);
 
   useEffect(() => {
+  async function loadPackages() {
+    try {
+      const packages = await loadRulePackages();
+      setImportedRulePackages(packages.map((p) => p.payload || p));
+    } catch (err) {
+      console.warn('Could not load rule packages', err);
+    }
+  }
+
+  loadPackages();
+}, []);
+
+  useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setState(JSON.parse(raw));
@@ -76,21 +90,28 @@ export default function EditableSchedulingWizard({
     }
   }
 
-  function handleImportRules() {
-    const result = importRulesFromText(importText, employees, importPackageName);
-    setImportResult(result);
-    setImportedRulePackages((prev) => [...prev, result]);
+  async function handleImportRules() {
+  const result = importRulesFromText(importText, employees, importPackageName);
 
-    if (setPreferences) {
-      setPreferences((prev) => mergeImportedPreferences(prev, result.preferencesPatch));
-    }
+  setImportResult(result);
+  setImportedRulePackages((prev) => [...prev, result]);
 
-    setImportText('');
-    setImportPackageName('');
-
-    setSaveMessage(`Importerade ${result.name}: ${result.employeeRules.length} individuella regler`);
-    setTimeout(() => setSaveMessage(''), 1800);
+  if (setPreferences) {
+    setPreferences((prev) => mergeImportedPreferences(prev, result.preferencesPatch));
   }
+
+  try {
+    await saveRulePackage(result);
+  } catch (err) {
+    console.warn('Could not save rule package', err);
+  }
+
+  setImportText('');
+  setImportPackageName('');
+
+  setSaveMessage(`Importerade ${result.name}: ${result.employeeRules.length} individuella regler`);
+  setTimeout(() => setSaveMessage(''), 1800);
+}
 
   const key = stepOrder[state.currentStep];
 
