@@ -485,8 +485,6 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
   ),
 
     generate: (
-
-    generate: (
       <div className="stack">
         <div className="card callout shimmer">
           <div className="section-title">Generera schema</div>
