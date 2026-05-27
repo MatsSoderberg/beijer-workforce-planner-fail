@@ -481,7 +481,6 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
   </div>
 ) : null}
         </div>
-      </div>
     ),
 
     generate: (
