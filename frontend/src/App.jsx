@@ -147,30 +147,6 @@ export default function App() {
   useEffect(() => {
   setSession(getSession());
 }, []);
-
-useEffect(() => {
-  async function loadFromDb() {
-    try {
-      const saved = await loadPlannerState();
-
-      if (saved?.employees) setEmployees(saved.employees);
-      if (saved?.preferences) setPreferences(saved.preferences);
-      if (saved?.generatedSchedule) setGeneratedSchedule(saved.generatedSchedule);
-
-      setDbStatus(saved ? 'Laddad från databas' : 'Ingen sparad databasdata');
-    } catch (err) {
-      console.warn('Could not load planner state from database', err);
-      setDbStatus('Kunde inte ladda från databas');
-    } finally {
-      setPlannerLoaded(true);
-    }
-  }
-
-  loadFromDb();
-}, []);
-
-  loadFromDb();
-}, []);
   useEffect(() => {
   async function loadFromDb() {
     try {
