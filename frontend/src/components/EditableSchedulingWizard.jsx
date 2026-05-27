@@ -1,7 +1,7 @@
-import { importRulesFromText, mergeImportedPreferences } from '../lib/importRulesFromText';
 import React, { useEffect, useMemo, useState } from 'react';
 import EmployeeGrid from './EmployeeGrid';
 import { generateScheduleFromBackend, generateScheduleFallback } from '../lib/scheduleApi';
+import { importRulesFromText, mergeImportedPreferences } from '../lib/importRulesFromText';
 
 const stepOrder = ['store', 'period', 'staffing', 'rules', 'generate', 'review', 'publish'];
 const STORAGE_KEY = 'beijer_wizard_nacka_v6';
@@ -12,12 +12,12 @@ const defaultState = {
   period: { startDate: '2026-09-01', endDate: '2026-12-31' },
   staffing: {
     weekday: { Kassa: 2, Farg: 1, Jarn: 2 },
-    weekend: { Kassa: 1, Farg: 1, Jarn: 1 }
+    weekend: { Kassa: 1, Farg: 1, Jarn: 1 },
   },
   rules: {
     markRedDays: true,
     optimizeEvenings: true,
-    honorPreferences: true
+    honorPreferences: true,
   },
   latestGenerated: null,
 };
@@ -26,13 +26,7 @@ function NumberField({ label, value, onChange }) {
   return (
     <label className="rule-card spread">
       <span>{label}</span>
-      <input
-        type="number"
-        min="0"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: 80 }}
-      />
+      <input type="number" min="0" value={value} onChange={(e) => onChange(Number(e.target.value))} style={{ width: 80 }} />
     </label>
   );
 }
@@ -44,7 +38,7 @@ function mapPreferences(preferences = {}) {
     preferredWorkDays: pref?.preferredWorkDays || [],
     fixedTimeOff: pref?.fixedTimeOff || [],
     notes: pref?.notes || '',
-    importedRuleTags: pref?.importedRuleTags || {}
+    importedRuleTags: pref?.importedRuleTags || {},
   }));
 }
 
@@ -53,15 +47,15 @@ export default function EditableSchedulingWizard({
   setEmployees,
   preferences = {},
   setPreferences,
-  onGenerated
+  onGenerated,
 }) {
   const [state, setState] = useState(defaultState);
   const [loading, setLoading] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [importText, setImportText] = useState('');
-  const [importResult, setImportResult] = useState(null);
   const [importPackageName, setImportPackageName] = useState('');
-const [importedRulePackages, setImportedRulePackages] = useState([]);
+  const [importResult, setImportResult] = useState(null);
+  const [importedRulePackages, setImportedRulePackages] = useState([]);
 
   useEffect(() => {
     try {
@@ -83,23 +77,18 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
   }
 
   function handleImportRules() {
-  const result = importRulesFromText(importText, employees, importPackageName);
-  setImportResult(result);
+    const result = importRulesFromText(importText, employees, importPackageName);
+    setImportResult(result);
+    setImportedRulePackages((prev) => [...prev, result]);
 
-  setImportedRulePackages((prev) => [...prev, result]);
+    if (setPreferences) {
+      setPreferences((prev) => mergeImportedPreferences(prev, result.preferencesPatch));
+    }
 
-  if (setPreferences) {
-    setPreferences((prev) => mergeImportedPreferences(prev, result.preferencesPatch));
-  }
+    setImportText('');
+    setImportPackageName('');
 
-  setImportText('');
-  setImportPackageName('');
-
-  setSaveMessage(`Importerade ${result.name}: ${result.employeeRules.length} individuella regler`);
-  setTimeout(() => setSaveMessage(''), 1800);
-}
-
-    setSaveMessage(`Importerade ${result.employeeRules.length} individuella regler`);
+    setSaveMessage(`Importerade ${result.name}: ${result.employeeRules.length} individuella regler`);
     setTimeout(() => setSaveMessage(''), 1800);
   }
 
@@ -116,6 +105,7 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
   async function next() {
     if (key === 'generate') {
       setLoading(true);
+
       try {
         const payload = {
           employees: employees.map((e) => ({
@@ -124,7 +114,7 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
             department: e.department,
             eveningOnly: !!e.eveningOnly,
             employmentPct: Number(e.employmentPct || 100),
-            contractHours: Math.round(40 * (Number(e.employmentPct || 100) / 100))
+            contractHours: Math.round(40 * (Number(e.employmentPct || 100) / 100)),
           })),
           preferences: mapPreferences(preferences),
           startDate: state.period.startDate,
@@ -132,20 +122,19 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
           rules: {
             staffingWeekday: {
               Kassa: state.staffing.weekday.Kassa,
-              'Färg': state.staffing.weekday.Farg,
-              'Järn': state.staffing.weekday.Jarn
+              Färg: state.staffing.weekday.Farg,
+              Järn: state.staffing.weekday.Jarn,
             },
             staffingWeekend: {
               Kassa: state.staffing.weekend.Kassa,
-              'Färg': state.staffing.weekend.Farg,
-              'Järn': state.staffing.weekend.Jarn
+              Färg: state.staffing.weekend.Farg,
+              Järn: state.staffing.weekend.Jarn,
             },
             markRedDays: state.rules.markRedDays,
             optimizeEvenings: state.rules.optimizeEvenings,
             honorPreferences: state.rules.honorPreferences,
-            importedDepartmentRules: importResult?.departmentRules || [],
-            importedGeneralRules: importResult?.generalRules || []
-          }
+            importedRulePackages,
+          },
         };
 
         let generated;
@@ -160,14 +149,13 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
           employeeCount: employees.length,
           departments: employeeStats,
           preferenceCount: Object.keys(preferences || {}).length,
-          importedDepartmentRules: importResult?.departmentRules?.length || 0,
-          importedGeneralRules: importResult?.generalRules?.length || 0,
+          importedRulePackages: importedRulePackages.length,
         };
 
         const nextState = {
           ...state,
           latestGenerated: generated,
-          currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1)
+          currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1),
         };
 
         persist(nextState);
@@ -175,19 +163,20 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
       } finally {
         setLoading(false);
       }
+
       return;
     }
 
     persist({
       ...state,
-      currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1)
+      currentStep: Math.min(state.currentStep + 1, stepOrder.length - 1),
     });
   }
 
   function prev() {
     persist({
       ...state,
-      currentStep: Math.max(state.currentStep - 1, 0)
+      currentStep: Math.max(state.currentStep - 1, 0),
     });
   }
 
@@ -197,8 +186,8 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
       latestGenerated: {
         ...(state.latestGenerated || {}),
         publishedAt: new Date().toISOString(),
-        status: 'published'
-      }
+        status: 'published',
+      },
     };
 
     persist(nextState);
@@ -216,12 +205,7 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
         <input
           className="pref-input"
           value={state.store.name}
-          onChange={(e) =>
-            persist({
-              ...state,
-              store: { ...state.store, name: e.target.value }
-            })
-          }
+          onChange={(e) => persist({ ...state, store: { ...state.store, name: e.target.value } })}
         />
       </div>
     ),
@@ -234,12 +218,7 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
             className="pref-input"
             type="date"
             value={state.period.startDate}
-            onChange={(e) =>
-              persist({
-                ...state,
-                period: { ...state.period, startDate: e.target.value }
-              })
-            }
+            onChange={(e) => persist({ ...state, period: { ...state.period, startDate: e.target.value } })}
           />
         </div>
         <div>
@@ -248,12 +227,7 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
             className="pref-input"
             type="date"
             value={state.period.endDate}
-            onChange={(e) =>
-              persist({
-                ...state,
-                period: { ...state.period, endDate: e.target.value }
-              })
-            }
+            onChange={(e) => persist({ ...state, period: { ...state.period, endDate: e.target.value } })}
           />
         </div>
       </div>
@@ -264,112 +238,28 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
         <EmployeeGrid employees={employees} setEmployees={setEmployees} />
 
         <div className="grid four">
-          <div className="card feature-card compact">
-            <div className="eyebrow">Totalt</div>
-            <div className="panel-value">{employeeStats.total}</div>
-          </div>
-          <div className="card feature-card compact">
-            <div className="eyebrow">Kassa</div>
-            <div className="panel-value">{employeeStats.kassa}</div>
-          </div>
-          <div className="card feature-card compact">
-            <div className="eyebrow">Färg</div>
-            <div className="panel-value">{employeeStats.farg}</div>
-          </div>
-          <div className="card feature-card compact">
-            <div className="eyebrow">Järn</div>
-            <div className="panel-value">{employeeStats.jarn}</div>
-          </div>
+          <div className="card feature-card compact"><div className="eyebrow">Totalt</div><div className="panel-value">{employeeStats.total}</div></div>
+          <div className="card feature-card compact"><div className="eyebrow">Kassa</div><div className="panel-value">{employeeStats.kassa}</div></div>
+          <div className="card feature-card compact"><div className="eyebrow">Färg</div><div className="panel-value">{employeeStats.farg}</div></div>
+          <div className="card feature-card compact"><div className="eyebrow">Järn</div><div className="panel-value">{employeeStats.jarn}</div></div>
         </div>
 
         <div className="grid two">
           <div className="card feature-card compact">
             <div className="section-title">Vardag</div>
             <div className="stack top-gap">
-              <NumberField
-                label="Kassa"
-                value={state.staffing.weekday.Kassa}
-                onChange={(v) =>
-                  persist({
-                    ...state,
-                    staffing: {
-                      ...state.staffing,
-                      weekday: { ...state.staffing.weekday, Kassa: v }
-                    }
-                  })
-                }
-              />
-              <NumberField
-                label="Färg"
-                value={state.staffing.weekday.Farg}
-                onChange={(v) =>
-                  persist({
-                    ...state,
-                    staffing: {
-                      ...state.staffing,
-                      weekday: { ...state.staffing.weekday, Farg: v }
-                    }
-                  })
-                }
-              />
-              <NumberField
-                label="Järn"
-                value={state.staffing.weekday.Jarn}
-                onChange={(v) =>
-                  persist({
-                    ...state,
-                    staffing: {
-                      ...state.staffing,
-                      weekday: { ...state.staffing.weekday, Jarn: v }
-                    }
-                  })
-                }
-              />
+              <NumberField label="Kassa" value={state.staffing.weekday.Kassa} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Kassa: v } } })} />
+              <NumberField label="Färg" value={state.staffing.weekday.Farg} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Farg: v } } })} />
+              <NumberField label="Järn" value={state.staffing.weekday.Jarn} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekday: { ...state.staffing.weekday, Jarn: v } } })} />
             </div>
           </div>
 
           <div className="card feature-card compact">
             <div className="section-title">Helg</div>
             <div className="stack top-gap">
-              <NumberField
-                label="Kassa"
-                value={state.staffing.weekend.Kassa}
-                onChange={(v) =>
-                  persist({
-                    ...state,
-                    staffing: {
-                      ...state.staffing,
-                      weekend: { ...state.staffing.weekend, Kassa: v }
-                    }
-                  })
-                }
-              />
-              <NumberField
-                label="Färg"
-                value={state.staffing.weekend.Farg}
-                onChange={(v) =>
-                  persist({
-                    ...state,
-                    staffing: {
-                      ...state.staffing,
-                      weekend: { ...state.staffing.weekend, Farg: v }
-                    }
-                  })
-                }
-              />
-              <NumberField
-                label="Järn"
-                value={state.staffing.weekend.Jarn}
-                onChange={(v) =>
-                  persist({
-                    ...state,
-                    staffing: {
-                      ...state.staffing,
-                      weekend: { ...state.staffing.weekend, Jarn: v }
-                    }
-                  })
-                }
-              />
+              <NumberField label="Kassa" value={state.staffing.weekend.Kassa} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Kassa: v } } })} />
+              <NumberField label="Färg" value={state.staffing.weekend.Farg} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Farg: v } } })} />
+              <NumberField label="Järn" value={state.staffing.weekend.Jarn} onChange={(v) => persist({ ...state, staffing: { ...state.staffing, weekend: { ...state.staffing.weekend, Jarn: v } } })} />
             </div>
           </div>
         </div>
@@ -380,61 +270,34 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
       <div className="stack">
         <label className="rule-card spread">
           <span>Markera svenska röda dagar</span>
-          <input
-            type="checkbox"
-            checked={state.rules.markRedDays}
-            onChange={(e) =>
-              persist({
-                ...state,
-                rules: { ...state.rules, markRedDays: e.target.checked }
-              })
-            }
-          />
+          <input type="checkbox" checked={state.rules.markRedDays} onChange={(e) => persist({ ...state, rules: { ...state.rules, markRedDays: e.target.checked } })} />
         </label>
 
         <label className="rule-card spread">
           <span>Optimera kvällar</span>
-          <input
-            type="checkbox"
-            checked={state.rules.optimizeEvenings}
-            onChange={(e) =>
-              persist({
-                ...state,
-                rules: { ...state.rules, optimizeEvenings: e.target.checked }
-              })
-            }
-          />
+          <input type="checkbox" checked={state.rules.optimizeEvenings} onChange={(e) => persist({ ...state, rules: { ...state.rules, optimizeEvenings: e.target.checked } })} />
         </label>
 
         <label className="rule-card spread">
           <span>Ta hänsyn till personliga önskemål</span>
-          <input
-            type="checkbox"
-            checked={state.rules.honorPreferences}
-            onChange={(e) =>
-              persist({
-                ...state,
-                rules: { ...state.rules, honorPreferences: e.target.checked }
-              })
-            }
-          />
+          <input type="checkbox" checked={state.rules.honorPreferences} onChange={(e) => persist({ ...state, rules: { ...state.rules, honorPreferences: e.target.checked } })} />
         </label>
 
         <div className="card feature-card compact">
           <div className="section-title">Importera schemaönskemål</div>
           <div className="muted">
-            Klistra in text från dokumentet. Systemet delar upp innehållet i
-            avdelningsregler, individuella önskemål och generella regler.
+            Klistra in text från dokumentet. Systemet delar upp innehållet i avdelningsregler,
+            individuella önskemål och generella regler.
           </div>
 
           <input
-  className="pref-input"
-  style={{ marginTop: 12 }}
-  value={importPackageName}
-  onChange={(e) => setImportPackageName(e.target.value)}
-  placeholder="Namn på regelpaket, t.ex. Färg/Järn eller Kassa"
-/>
-          
+            className="pref-input"
+            style={{ marginTop: 12 }}
+            value={importPackageName}
+            onChange={(e) => setImportPackageName(e.target.value)}
+            placeholder="Namn på regelpaket, t.ex. Färg/Järn eller Kassa"
+          />
+
           <textarea
             className="pref-input"
             style={{ minHeight: 180, marginTop: 12 }}
@@ -443,11 +306,7 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
             placeholder="Klistra in schemaönskemål här..."
           />
 
-          <button
-            className="btn primary"
-            onClick={handleImportRules}
-            style={{ marginTop: 12 }}
-          >
+          <button className="btn primary" onClick={handleImportRules} style={{ marginTop: 12 }}>
             Importera schemaönskemål
           </button>
 
@@ -460,65 +319,50 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
               </div>
             </div>
           ) : null}
+
           {importedRulePackages.length > 0 ? (
-  <div className="top-gap">
-    <div className="section-title">Aktiva regelpaket</div>
-    {importedRulePackages.map((pkg) => (
-      <div key={pkg.id} className="rule-card spread">
-        <span>
-          {pkg.name} · {pkg.department} · {pkg.employeeRules.length} individuella regler
-        </span>
-        <button
-          className="btn ghost"
-          onClick={() =>
-            setImportedRulePackages((prev) => prev.filter((p) => p.id !== pkg.id))
-          }
-        >
-          Ta bort
-        </button>
+            <div className="top-gap">
+              <div className="section-title">Aktiva regelpaket</div>
+              {importedRulePackages.map((pkg) => (
+                <div key={pkg.id} className="rule-card spread">
+                  <span>
+                    {pkg.name} · {pkg.department} · {pkg.employeeRules.length} individuella regler
+                  </span>
+                  <button
+                    className="btn ghost"
+                    onClick={() => setImportedRulePackages((prev) => prev.filter((p) => p.id !== pkg.id))}
+                  >
+                    Ta bort
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
-    ))}
-  </div>
-        ) : null}
-      </div>
-    </div>
-  ),
+    ),
 
     generate: (
       <div className="stack">
         <div className="card callout shimmer">
           <div className="section-title">Generera schema</div>
           <div className="muted">
-            Nu skickas både medarbetare, preferenser och importerade regler till genereringen.
+            Nu skickas medarbetare, preferenser och aktiva regelpaket till genereringen.
           </div>
         </div>
 
         <div className="grid four">
-          <div className="card feature-card compact">
-            <div className="eyebrow">Medarbetare</div>
-            <div className="panel-value">{employeeStats.total}</div>
-          </div>
-          <div className="card feature-card compact">
-            <div className="eyebrow">Preferenser</div>
-            <div className="panel-value">{Object.keys(preferences || {}).length}</div>
-          </div>
-          <div className="card feature-card compact">
-            <div className="eyebrow">Färg</div>
-            <div className="panel-value">{employeeStats.farg}</div>
-          </div>
-          <div className="card feature-card compact">
-            <div className="eyebrow">Järn</div>
-            <div className="panel-value">{employeeStats.jarn}</div>
-          </div>
+          <div className="card feature-card compact"><div className="eyebrow">Medarbetare</div><div className="panel-value">{employeeStats.total}</div></div>
+          <div className="card feature-card compact"><div className="eyebrow">Preferenser</div><div className="panel-value">{Object.keys(preferences || {}).length}</div></div>
+          <div className="card feature-card compact"><div className="eyebrow">Färg</div><div className="panel-value">{employeeStats.farg}</div></div>
+          <div className="card feature-card compact"><div className="eyebrow">Järn</div><div className="panel-value">{employeeStats.jarn}</div></div>
         </div>
 
-        {importResult ? (
+        {importedRulePackages.length > 0 ? (
           <div className="card feature-card compact">
-            <div className="section-title">Importerade regler</div>
+            <div className="section-title">Aktiva regelpaket</div>
             <div className="muted">
-              {importResult.employeeRules.length} individuella regler,{' '}
-              {importResult.departmentRules.length} avdelningsregler och{' '}
-              {importResult.generalRules.length} generella regler följer med till genereringen.
+              {importedRulePackages.length} regelpaket följer med till genereringen.
             </div>
           </div>
         ) : null}
@@ -538,9 +382,7 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
       <div className="stack">
         <div className="section-title">Publicera</div>
         <div className="muted">Spara status på schemautkastet som publicerat.</div>
-        <button className="btn primary" onClick={publishNow}>
-          Publicera schema
-        </button>
+        <button className="btn primary" onClick={publishNow}>Publicera schema</button>
       </div>
     ),
   };
@@ -553,14 +395,9 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
 
         <div className="progress-wrap">
           <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{ width: `${((state.currentStep + 1) / stepOrder.length) * 100}%` }}
-            />
+            <div className="progress-fill" style={{ width: `${((state.currentStep + 1) / stepOrder.length) * 100}%` }} />
           </div>
-          <div className="muted small">
-            Steg {state.currentStep + 1} av {stepOrder.length}
-          </div>
+          <div className="muted small">Steg {state.currentStep + 1} av {stepOrder.length}</div>
         </div>
 
         <div className="step-list">
@@ -576,30 +413,18 @@ const [importedRulePackages, setImportedRulePackages] = useState([]);
           ))}
         </div>
 
-        {saveMessage ? (
-          <div className="save-pill" style={{ marginTop: 12 }}>
-            {saveMessage}
-          </div>
-        ) : null}
+        {saveMessage ? <div className="save-pill" style={{ marginTop: 12 }}>{saveMessage}</div> : null}
       </aside>
 
       <section className="card wizard-main">
         {content[key]}
 
         <div className="wizard-actions">
-          <button
-            className="btn ghost"
-            disabled={state.currentStep === 0}
-            onClick={prev}
-          >
+          <button className="btn ghost" disabled={state.currentStep === 0} onClick={prev}>
             ← Tillbaka
           </button>
 
-          <button
-            className="btn primary"
-            disabled={loading}
-            onClick={next}
-          >
+          <button className="btn primary" disabled={loading} onClick={next}>
             {loading ? 'Genererar...' : key === 'publish' ? 'Klar' : 'Nästa steg →'}
           </button>
         </div>
