@@ -63,3 +63,14 @@ export async function initDb() {
 export function getDb() {
   return pool;
 }
+export async function resetDatabase() {
+  await pool.query(`
+    DROP TABLE IF EXISTS generated_schedules;
+    DROP TABLE IF EXISTS rule_packages;
+    DROP TABLE IF EXISTS employee_preferences;
+    DROP TABLE IF EXISTS employees;
+    DROP TABLE IF EXISTS stores;
+  `);
+
+  await initDb();
+}
