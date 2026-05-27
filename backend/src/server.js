@@ -6,6 +6,7 @@ import { login, requireAuth, requireChef } from './auth.js';
 import { getState, updateSection, addEmployee, addTimeOff, saveSchedule, publishRun } from './repository.js';
 import { generateSchedule, scheduleSummary } from './scheduler.js';
 import { getDb, resetDatabase } from './db.js';
+import { initDb } from "./db.js";
 
 await getDb();
 const app = express();
@@ -107,6 +108,19 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(frontendDist, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3001;
+
+async function start() {
+  try {
+    await initDb();
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Backend running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("Failed to start server", err);
+    process.exit(1);
+  }
+}
+
+start();
