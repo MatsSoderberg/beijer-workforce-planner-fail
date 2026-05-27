@@ -187,12 +187,6 @@ app.post("/api/planner-state", async (req, res) => {
   }
 });
 
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Failed to save planner state", err);
-    res.status(500).json({ error: "Failed to save planner state" });
-  }
-});
 app.get("/api/rule-packages", async (req, res) => {
   try {
     const result = await pool.query(`
