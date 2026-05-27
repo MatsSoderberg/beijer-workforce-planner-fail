@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import EditableSchedulingWizard from './components/EditableSchedulingWizard';
 import PersonalPreferencesForm from './components/PersonalPreferencesForm';
@@ -6,8 +6,6 @@ import StaffingCopilotBackend from './components/StaffingCopilotBackend';
 import GeneratedSchedulePreview from './components/GeneratedSchedulePreview';
 import { getSession, logout } from './lib/auth';
 import { loadPlannerState, savePlannerState } from './lib/plannerStateApi';
-
-const days = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
 
 const defaultEmployees = [
   { id: 'david', name: 'David', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
@@ -52,7 +50,7 @@ function KPI({ title, value, sub }) {
   );
 }
 
-function Dashboard({ generatedSchedule, employees }) {
+function Dashboard({ generatedSchedule, employees, dbStatus }) {
   return (
     <div className="main-layout">
       <div className="stack">
@@ -60,14 +58,18 @@ function Dashboard({ generatedSchedule, employees }) {
           <KPI title="Medarbetare" value={employees.length} sub="Aktuell personalstyrka" />
           <KPI title="Genererat" value={generatedSchedule ? 'Ja' : 'Nej'} sub="Senaste schema" />
           <KPI title="Preferenser" value={generatedSchedule?.metadata?.preferenceCount ?? 0} sub="I genereringen" />
-          <KPI title="Period" value="Sep–Dec" sub="Aktiv planering" />
+          <KPI title="Databas" value={dbStatus} sub="Senaste synkstatus" />
         </div>
+
         <GeneratedSchedulePreview generated={generatedSchedule} />
       </div>
+
       <div className="stack">
         <div className="card">
           <div className="section-title">Översikt</div>
-          <div className="muted">Senaste genereringen och medarbetarstyrkan används nu av Copilot och preview.</div>
+          <div className="muted">
+            Senaste genereringen och medarbetarstyrkan används nu av Copilot och preview.
+          </div>
         </div>
       </div>
     </div>
@@ -77,15 +79,24 @@ function Dashboard({ generatedSchedule, employees }) {
 function PreferencesView({ employees, preferences, setPreferences }) {
   const [selectedId, setSelectedId] = useState(employees[0]?.id || '');
   const [saveTick, setSaveTick] = useState(0);
-  const selectedEmployee = employees.find((e) => e.id === selectedId) || employees[0];
+
+  const selectedEmployee =
+    employees.find((e) => e.id === selectedId) || employees[0];
 
   useEffect(() => {
-    if (!selectedEmployee && employees[0]) setSelectedId(employees[0].id);
+    if (!selectedEmployee && employees[0]) {
+      setSelectedId(employees[0].id);
+    }
   }, [employees, selectedEmployee]);
 
   function handleSave(nextPref) {
     if (!selectedEmployee) return;
-    setPreferences((prev) => ({ ...prev, [selectedEmployee.id]: nextPref }));
+
+    setPreferences((prev) => ({
+      ...prev,
+      [selectedEmployee.id]: nextPref,
+    }));
+
     setSaveTick((x) => x + 1);
   }
 
@@ -97,34 +108,58 @@ function PreferencesView({ employees, preferences, setPreferences }) {
       </div>
     );
   }
-  
+
   return (
     <div className="preferences-layout">
       <aside className="card employee-list-card">
         <div className="section-title">Medarbetare</div>
-        <div className="muted">Välj person och registrera önskemål som ska vägas in i schemamotorn.</div>
+        <div className="muted">
+          Välj person och registrera önskemål som ska vägas in i schemamotorn.
+        </div>
+
         <div className="employee-list">
           {employees.map((e) => (
-            <button key={e.id} className={`employee-list-item ${selectedId === e.id ? 'active' : ''}`} onClick={() => setSelectedId(e.id)}>
+            <button
+              key={e.id}
+              className={`employee-list-item ${selectedId === e.id ? 'active' : ''}`}
+              onClick={() => setSelectedId(e.id)}
+            >
               <div>
-                <div className="employee-name">{e.name || 'Namnlös medarbetare'}</div>
-                <div className="muted small">{e.department} · {e.employmentPct}% {e.eveningOnly ? '· kväll endast' : ''}</div>
+                <div className="employee-name">
+                  {e.name || 'Namnlös medarbetare'}
+                </div>
+                <div className="muted small">
+                  {e.department} · {e.employmentPct}%{' '}
+                  {e.eveningOnly ? '· kväll endast' : ''}
+                </div>
               </div>
             </button>
           ))}
         </div>
       </aside>
+
       <section className="card">
         <div className="preferences-header">
           <div>
             <div className="section-title">Personliga önskemål</div>
-            <div className="muted">Dessa önskemål skickas nu med i genereringen.</div>
+            <div className="muted">
+              Dessa önskemål skickas nu med i genereringen.
+            </div>
           </div>
+
           <div className="save-pill">Sparade ändringar: {saveTick}</div>
         </div>
+
         <PersonalPreferencesForm
           employeeName={selectedEmployee.name || 'Medarbetare'}
-          value={preferences[selectedEmployee.id] || { preferredOffDays: [], preferredWorkDays: [], fixedTimeOff: [], notes: '' }}
+          value={
+            preferences[selectedEmployee.id] || {
+              preferredOffDays: [],
+              preferredWorkDays: [],
+              fixedTimeOff: [],
+              notes: '',
+            }
+          }
           onSave={handleSave}
         />
       </section>
@@ -141,74 +176,102 @@ export default function App() {
   const [dbStatus, setDbStatus] = useState('Ej laddad');
   const [plannerLoaded, setPlannerLoaded] = useState(false);
 
-useEffect(() => {
-  setSession(getSession());
-}, []);
+  useEffect(() => {
+    setSession(getSession());
+  }, []);
 
-useEffect(() => {
-  async function loadFromDb() {
+  useEffect(() => {
+    async function loadFromDb() {
+      try {
+        const saved = await loadPlannerState();
+
+        if (saved?.employees) {
+          setEmployees(saved.employees);
+        }
+
+        if (saved?.preferences) {
+          setPreferences(saved.preferences);
+        }
+
+        if (saved?.generatedSchedule) {
+          setGeneratedSchedule(saved.generatedSchedule);
+        }
+
+        setDbStatus(saved ? 'Laddad' : 'Tom');
+      } catch (err) {
+        console.warn('Could not load planner state from database', err);
+        setDbStatus('Fel vid laddning');
+      } finally {
+        setPlannerLoaded(true);
+      }
+    }
+
+    loadFromDb();
+  }, []);
+
+  useEffect(() => {
+    if (!plannerLoaded) return;
+
+    const timer = setTimeout(() => {
+      savePlannerState({
+        employees,
+        preferences,
+        generatedSchedule: generatedSchedule || undefined,
+        savedAt: new Date().toISOString(),
+      })
+        .then(() => {
+          setDbStatus('Sparad');
+        })
+        .catch((err) => {
+          console.warn('Could not save planner state to database', err);
+          setDbStatus('Fel vid sparning');
+        });
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [plannerLoaded, employees, preferences, generatedSchedule]);
+
+  async function handleGeneratedSchedule(generated) {
+    setGeneratedSchedule(generated);
+    setView('dashboard');
+
     try {
-      const saved = await loadPlannerState();
+      await savePlannerState({
+        employees,
+        preferences,
+        generatedSchedule: generated,
+        savedAt: new Date().toISOString(),
+      });
 
-      if (saved?.employees) setEmployees(saved.employees);
-      if (saved?.preferences) setPreferences(saved.preferences);
-      if (saved?.generatedSchedule) setGeneratedSchedule(saved.generatedSchedule);
-
-      setDbStatus(saved ? 'Laddad från databas' : 'Ingen sparad databasdata');
+      setDbStatus('Schema sparat');
     } catch (err) {
-      console.warn('Could not load planner state from database', err);
-      setDbStatus('Kunde inte ladda från databas');
-    } finally {
-      setPlannerLoaded(true);
+      console.warn('Could not save generated schedule to database', err);
+      setDbStatus('Fel vid schemasparning');
     }
   }
-async function handleGeneratedSchedule(generated) {
-  setGeneratedSchedule(generated);
 
-  try {
-    await savePlannerState({
-      employees,
-      preferences,
-      generatedSchedule: generated,
-      savedAt: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.warn('Could not save generated schedule to database', err);
+  if (!session) {
+    return <LoginScreen onLogin={(user) => setSession(user)} />;
   }
-}
-
-  loadFromDb();
-}, []);
-
-useEffect(() => {
-  if (!plannerLoaded) return;
-
-  const timer = setTimeout(() => {
-    savePlannerState({
-  employees,
-  preferences,
-  generatedSchedule: generatedSchedule || undefined,
-  savedAt: new Date().toISOString(),
-}).catch((err) => {
-      console.warn('Could not save planner state to database', err);
-    });
-  }, 1200);
-
-  return () => clearTimeout(timer);
-}, [plannerLoaded, employees, preferences, generatedSchedule]);
-
-  if (!session) return <LoginScreen onLogin={(user) => setSession(user)} />;
 
   const role = session.role;
-  const nav = role === 'chef'
-    ? [['dashboard', 'Dashboard'], ['wizard', 'Planeringswizard'], ['preferences', 'Önskemål'], ['copilot', 'Copilot']]
-    : [['personal', 'Min vy']];
+
+  const nav =
+    role === 'chef'
+      ? [
+          ['dashboard', 'Dashboard'],
+          ['wizard', 'Planeringswizard'],
+          ['preferences', 'Önskemål'],
+          ['copilot', 'Copilot'],
+        ]
+      : [['personal', 'Min vy']];
 
   return (
     <div className="app-shell">
       <div className="orb orb-a"></div>
       <div className="orb orb-b"></div>
       <div className="orb orb-c"></div>
+
       <div className="container">
         <header className="hero">
           <div>
@@ -216,34 +279,78 @@ useEffect(() => {
             <h1>Workforce Planner</h1>
             <p>Modern internapp för bemanningsplanering</p>
           </div>
+
           <div className="hero-right">
-            <div className="hero-chip">{session.name} · {role === 'chef' ? 'Chefsvy' : 'Personalvy'}</div>
+            <div className="hero-chip">
+              {session.name} · {role === 'chef' ? 'Chefsvy' : 'Personalvy'}
+            </div>
+
             <div className="hero-chip">DB: {dbStatus}</div>
-            <button className="hero-chip" onClick={() => { logout(); setSession(null); }}>Logga ut</button>
+
+            <button
+              className="hero-chip"
+              onClick={() => {
+                logout();
+                setSession(null);
+              }}
+            >
+              Logga ut
+            </button>
           </div>
         </header>
 
         <nav className="top-nav">
           {nav.map(([key, label]) => (
-            <button key={key} className={view === key ? 'active' : ''} onClick={() => setView(key)}>{label}</button>
+            <button
+              key={key}
+              className={view === key ? 'active' : ''}
+              onClick={() => setView(key)}
+            >
+              {label}
+            </button>
           ))}
         </nav>
 
-        {role === 'chef' && view === 'dashboard' && <Dashboard generatedSchedule={generatedSchedule} employees={employees} />}
+        {role === 'chef' && view === 'dashboard' && (
+          <Dashboard
+            generatedSchedule={generatedSchedule}
+            employees={employees}
+            dbStatus={dbStatus}
+          />
+        )}
+
         {role === 'chef' && view === 'wizard' && (
-         <EditableSchedulingWizard
-  employees={employees}
-  setEmployees={setEmployees}
-  preferences={preferences}
-  setPreferences={setPreferences}
-  onGenerated={handleGeneratedSchedule}
-/>
+          <EditableSchedulingWizard
+            employees={employees}
+            setEmployees={setEmployees}
+            preferences={preferences}
+            setPreferences={setPreferences}
+            onGenerated={handleGeneratedSchedule}
+          />
         )}
+
         {role === 'chef' && view === 'preferences' && (
-          <PreferencesView employees={employees} preferences={preferences} setPreferences={setPreferences} />
+          <PreferencesView
+            employees={employees}
+            preferences={preferences}
+            setPreferences={setPreferences}
+          />
         )}
+
         {role === 'chef' && view === 'copilot' && (
-          <StaffingCopilotBackend generated={generatedSchedule} preferences={preferences} />
+          <StaffingCopilotBackend
+            generated={generatedSchedule}
+            preferences={preferences}
+          />
+        )}
+
+        {role !== 'chef' && view === 'personal' && (
+          <div className="card">
+            <div className="section-title">Min vy</div>
+            <div className="muted">
+              Personalvy kommer senare att visa individuellt schema och önskemål.
+            </div>
+          </div>
         )}
       </div>
     </div>
