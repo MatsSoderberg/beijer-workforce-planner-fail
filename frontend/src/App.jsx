@@ -171,11 +171,11 @@ useEffect(() => {
 
   const timer = setTimeout(() => {
     savePlannerState({
-      employees,
-      preferences,
-      generatedSchedule,
-      savedAt: new Date().toISOString(),
-    }).catch((err) => {
+  employees,
+  preferences,
+  generatedSchedule: generatedSchedule || undefined,
+  savedAt: new Date().toISOString(),
+}).catch((err) => {
       console.warn('Could not save planner state to database', err);
     });
   }, 1200);
