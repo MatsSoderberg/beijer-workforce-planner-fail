@@ -80,14 +80,13 @@ function Dashboard({
         </div>
        <div
   className="card"
-  style={{ maxHeight: 420, overflowY: 'auto' }}
 >
   <div className="section-title">
     Schemaversioner
   </div>
 
   <div className="stack">
-    scheduleVersions?.slice(0, 5).map((schedule) => (
+    scheduleVersions?.map((schedule) => (
       <div
         key={schedule.id}
         className="rule-card spread"
