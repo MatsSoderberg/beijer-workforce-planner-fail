@@ -51,7 +51,13 @@ function KPI({ title, value, sub }) {
   );
 }
 
-function Dashboard({ generatedSchedule, employees, dbStatus }) {
+function Dashboard({
+  generatedSchedule,
+  employees,
+  dbStatus,
+  scheduleVersions,
+  onPublishSchedule
+})
   return (
     <div className="main-layout">
       <div className="stack">
