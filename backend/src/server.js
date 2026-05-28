@@ -251,4 +251,106 @@ app.delete("/api/rule-packages/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete rule package" });
   }
 });
+app.get("/api/schedules", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        id,
+        version,
+        title,
+        comment,
+        status,
+        published,
+        generated_by,
+        start_date,
+        end_date,
+        created_at,
+        generated_json
+      FROM generated_schedules
+      ORDER BY created_at DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Failed to load schedules", err);
+    res.status(500).json({ error: "Failed to load schedules" });
+  }
+});
+app.post("/api/schedules", async (req, res) => {
+  try {
+    const payload = req.body;
+
+    const latest = await pool.query(`
+      SELECT MAX(version) AS max_version
+      FROM generated_schedules
+    `);
+
+    const nextVersion =
+      (latest.rows[0]?.max_version || 0) + 1;
+
+    const result = await pool.query(
+      `
+      INSERT INTO generated_schedules (
+        version,
+        title,
+        comment,
+        generated_json,
+        status,
+        published,
+        generated_by,
+        start_date,
+        end_date
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *
+      `,
+      [
+        nextVersion,
+        payload.title || `Schema v${nextVersion}`,
+        payload.comment || "",
+        payload.generatedSchedule,
+        "draft",
+        false,
+        payload.generatedBy || "Chef Nacka",
+        payload?.period?.startDate || null,
+        payload?.period?.endDate || null,
+      ]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Failed to save schedule version", err);
+    res.status(500).json({
+      error: "Failed to save schedule version",
+    });
+  }
+});
+app.post("/api/schedules/:id/publish", async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    await pool.query(`
+      UPDATE generated_schedules
+      SET published = false,
+          status = 'draft'
+    `);
+
+    await pool.query(
+      `
+      UPDATE generated_schedules
+      SET published = true,
+          status = 'published'
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to publish schedule", err);
+    res.status(500).json({
+      error: "Failed to publish schedule",
+    });
+  }
+});
 start();
