@@ -6,6 +6,7 @@ import StaffingCopilotBackend from './components/StaffingCopilotBackend';
 import GeneratedSchedulePreview from './components/GeneratedSchedulePreview';
 import { getSession, logout } from './lib/auth';
 import { loadPlannerState, savePlannerState } from './lib/plannerStateApi';
+import { loadSchedules, saveScheduleVersion, publishSchedule } from './lib/scheduleVersionApi';
 
 const defaultEmployees = [
   { id: 'david', name: 'David', department: 'Kassa', eveningOnly: false, employmentPct: 100 },
@@ -176,9 +177,23 @@ export default function App() {
   const [dbStatus, setDbStatus] = useState('Ej laddad');
   const [plannerLoaded, setPlannerLoaded] = useState(false);
 
+  const [scheduleVersions, setScheduleVersions] = useState([]);
+
   useEffect(() => {
     setSession(getSession());
   }, []);
+  useEffect(() => {
+  async function loadVersions() {
+    try {
+      const versions = await loadSchedules();
+      setScheduleVersions(versions);
+    } catch (err) {
+      console.warn('Could not load schedule versions', err);
+    }
+  }
+
+  loadVersions();
+}, []);
 
   useEffect(() => {
     async function loadFromDb() {
@@ -242,6 +257,14 @@ export default function App() {
         generatedSchedule: generated,
         savedAt: new Date().toISOString(),
       });
+      const savedVersion = await saveScheduleVersion({
+  title: `Schema ${new Date().toLocaleDateString('sv-SE')}`,
+  comment: '',
+  generatedSchedule: generated,
+  generatedBy: session?.name || 'Chef',
+});
+
+setScheduleVersions((prev) => [savedVersion, ...prev]);
 
       setDbStatus('Schema sparat');
     } catch (err) {
@@ -312,12 +335,17 @@ export default function App() {
         </nav>
 
         {role === 'chef' && view === 'dashboard' && (
-          <Dashboard
-            generatedSchedule={generatedSchedule}
-            employees={employees}
-            dbStatus={dbStatus}
-          />
-        )}
+         <Dashboard
+  generatedSchedule={generatedSchedule}
+  employees={employees}
+  dbStatus={dbStatus}
+  scheduleVersions={scheduleVersions}
+  onPublishSchedule={async (id) => {
+    await publishSchedule(id);
+    const versions = await loadSchedules();
+    setScheduleVersions(versions);
+  }}
+/>
 
         {role === 'chef' && view === 'wizard' && (
           <EditableSchedulingWizard
