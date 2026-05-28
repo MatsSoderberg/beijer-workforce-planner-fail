@@ -57,7 +57,7 @@ function Dashboard({
   dbStatus,
   scheduleVersions,
   onPublishSchedule
-})
+}) {
   return (
     <div className="main-layout">
       <div className="stack">
