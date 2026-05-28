@@ -67,6 +67,23 @@ export async function initDb() {
     );
   `);
 
+  await pool.query(`
+  ALTER TABLE generated_schedules
+    ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1;
+
+  ALTER TABLE generated_schedules
+    ADD COLUMN IF NOT EXISTS title TEXT DEFAULT '';
+
+  ALTER TABLE generated_schedules
+    ADD COLUMN IF NOT EXISTS comment TEXT DEFAULT '';
+
+  ALTER TABLE generated_schedules
+    ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'draft';
+
+  ALTER TABLE generated_schedules
+    ADD COLUMN IF NOT EXISTS generated_by TEXT DEFAULT '';
+`);
+
   console.log("✅ Database initialized");
 }
 
