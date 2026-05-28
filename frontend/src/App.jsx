@@ -298,31 +298,32 @@ export default function App() {
   }, [plannerLoaded, employees, preferences, generatedSchedule]);
 
   async function handleGeneratedSchedule(generated) {
-    setGeneratedSchedule(generated);
-    setView('dashboard');
+  setGeneratedSchedule(generated);
+  setView('dashboard');
 
-    try {
-      await savePlannerState({
-        employees,
-        preferences,
-        generatedSchedule: generated,
-        savedAt: new Date().toISOString(),
-      });
-      const savedVersion = await saveScheduleVersion({
-  title: `Schema ${new Date().toLocaleDateString('sv-SE')}`,
-  comment: '',
-  generatedSchedule: generated,
-  generatedBy: session?.name || 'Chef',
-});
+  try {
+    await savePlannerState({
+      employees,
+      preferences,
+      generatedSchedule: generated,
+      savedAt: new Date().toISOString(),
+    });
 
-setScheduleVersions((prev) => [savedVersion, ...prev]);
+    const savedVersion = await saveScheduleVersion({
+      title: `Schema ${new Date().toLocaleDateString('sv-SE')}`,
+      comment: '',
+      generatedSchedule: generated,
+      generatedBy: session?.name || 'Chef',
+    });
 
-      setDbStatus('Schema sparat');
-    } catch (err) {
-      console.warn('Could not save generated schedule to database', err);
-      setDbStatus('Fel vid schemasparning');
-    }
+    setScheduleVersions((prev) => [savedVersion, ...prev]);
+
+    setDbStatus('Schema sparat');
+  } catch (err) {
+    console.warn('Could not save generated schedule to database', err);
+    setDbStatus('Fel vid schemasparning');
   }
+}
 
   if (!session) {
     return <LoginScreen onLogin={(user) => setSession(user)} />;
