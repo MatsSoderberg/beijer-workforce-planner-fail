@@ -334,10 +334,9 @@ setScheduleVersions((prev) => [savedVersion, ...prev]);
           ))}
         </nav>
 
+       
         {role === 'chef' && view === 'dashboard' && (
-        {role === 'chef' && view === 'dashboard' && (
- 
-          <Dashboard
+           <Dashboard
     generatedSchedule={generatedSchedule}
     employees={employees}
     dbStatus={dbStatus}
