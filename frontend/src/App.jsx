@@ -78,58 +78,50 @@ function Dashboard({
             Senaste genereringen och medarbetarstyrkan används nu av Copilot och preview.
           </div>
         </div>
-       <div
-  className="card"
->
-  <div className="section-title">
-    Schemaversioner
-  </div>
 
-  <div className="stack">
-    scheduleVersions?.map((schedule) => (
-      <div
-        key={schedule.id}
-        className="rule-card spread"
-      >
-        <div>
-          <strong>{schedule.title}</strong>
+        <div className="card" style={{ maxHeight: 420, overflowY: 'auto' }}>
+          <div className="section-title">Schemaversioner</div>
 
-          <div className="muted small">
-            Version {schedule.version} ·{' '}
-            {schedule.status}
-          </div>
+          <div className="stack">
+            {scheduleVersions?.slice(0, 5).map((schedule) => (
+              <div
+                key={schedule.id}
+                className="rule-card spread"
+              >
+                <div>
+                  <strong>{schedule.title}</strong>
 
-          <div className="muted small">
-            {new Date(schedule.created_at)
-              .toLocaleString('sv-SE')}
+                  <div className="muted small">
+                    Version {schedule.version} · {schedule.status}
+                  </div>
+
+                  <div className="muted small">
+                    {new Date(schedule.created_at).toLocaleString('sv-SE')}
+                  </div>
+                </div>
+
+                {!schedule.published && (
+                  <button
+                    className="btn primary"
+                    onClick={() => onPublishSchedule(schedule.id)}
+                  >
+                    Publicera
+                  </button>
+                )}
+
+                {schedule.published && (
+                  <div className="save-pill">
+                    Publicerad
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-
-        {!schedule.published && (
-          <button
-            className="btn primary"
-            onClick={() =>
-              onPublishSchedule(schedule.id)
-            }
-          >
-            Publicera
-          </button>
-        )}
-
-        {schedule.published && (
-          <div className="save-pill">
-            Publicerad
-          </div>
-        )}
-      </div>
-    ))}
-  </div>
-</div>
       </div>
     </div>
   );
 }
-
 function PreferencesView({ employees, preferences, setPreferences }) {
   const [selectedId, setSelectedId] = useState(employees[0]?.id || '');
   const [saveTick, setSaveTick] = useState(0);
