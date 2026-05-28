@@ -78,13 +78,16 @@ function Dashboard({
             Senaste genereringen och medarbetarstyrkan används nu av Copilot och preview.
           </div>
         </div>
-        <div className="card">
+       <div
+  className="card"
+  style={{ maxHeight: 420, overflowY: 'auto' }}
+>
   <div className="section-title">
     Schemaversioner
   </div>
 
   <div className="stack">
-    {scheduleVersions?.map((schedule) => (
+    scheduleVersions?.slice(0, 5).map((schedule) => (
       <div
         key={schedule.id}
         className="rule-card spread"
