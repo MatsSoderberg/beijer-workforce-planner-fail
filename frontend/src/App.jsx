@@ -78,6 +78,51 @@ function Dashboard({
             Senaste genereringen och medarbetarstyrkan används nu av Copilot och preview.
           </div>
         </div>
+        <div className="card">
+  <div className="section-title">
+    Schemaversioner
+  </div>
+
+  <div className="stack">
+    {scheduleVersions?.map((schedule) => (
+      <div
+        key={schedule.id}
+        className="rule-card spread"
+      >
+        <div>
+          <strong>{schedule.title}</strong>
+
+          <div className="muted small">
+            Version {schedule.version} ·{' '}
+            {schedule.status}
+          </div>
+
+          <div className="muted small">
+            {new Date(schedule.created_at)
+              .toLocaleString('sv-SE')}
+          </div>
+        </div>
+
+        {!schedule.published && (
+          <button
+            className="btn primary"
+            onClick={() =>
+              onPublishSchedule(schedule.id)
+            }
+          >
+            Publicera
+          </button>
+        )}
+
+        {schedule.published && (
+          <div className="save-pill">
+            Publicerad
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+</div>
       </div>
     </div>
   );
