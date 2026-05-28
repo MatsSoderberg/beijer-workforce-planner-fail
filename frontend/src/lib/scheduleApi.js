@@ -32,12 +32,20 @@ function findPreference(emp, preferences = []) {
   return preferences.find((p) => p.employeeId === emp.id) || {};
 }
 
+function parseMaxWeeklyHours(notes = "") {
+  const match = notes.toLowerCase().match(/max\s*(\d{1,2})(?:[,.](\d{1,2}))?\s*timmar/);
+  if (!match) return null;
+  const whole = Number(match[1]);
+  const decimal = match[2] ? Number(`0.${match[2]}`) : 0;
+  return whole + decimal;
+}
+
 function parseFreeTextNotes(notes = "") {
   const t = notes.toLowerCase();
 
   return {
-    prefersEarly: t.includes("tidigt") || t.includes("morgon") || t.includes("6-15") || t.includes("7-16"),
-    prefersLate: t.includes("sen") || t.includes("kväll") || t.includes("10-19"),
+    prefersEarly: t.includes("helst tidigt") || t.includes("tidigt") || t.includes("morgon") || t.includes("6-15") || t.includes("7-16"),
+    prefersLate: t.includes("hellre sena") || t.includes("sena pass") || t.includes("10-19") || t.includes("kväll"),
     prefersEightToFive: t.includes("8-17") || t.includes("08-17"),
     avoidsEarly: t.includes("aldrig jobba 6-15") || t.includes("inga 6-15") || t.includes("inte 6-15"),
     avoidsEightToFive: t.includes("inga 8-17") || t.includes("inte 8-17"),
@@ -50,41 +58,52 @@ function parseFreeTextNotes(notes = "") {
     compWeekAfter: t.includes("veckan efter"),
     preferConsecutiveDaysOff: t.includes("ledig flera dagar") || t.includes("sammanhängande"),
     avoidConsecutiveEvenings: t.includes("inte flera kväll") || t.includes("inte kvällar i rad"),
+    maxWeeklyHours: parseMaxWeeklyHours(notes),
   };
 }
 
 function mergedRules(pref = {}) {
+  const parsed = parseFreeTextNotes(pref.notes || "");
+  const imported = pref.importedRuleTags || {};
+
   return {
-    ...parseFreeTextNotes(pref.notes || ""),
-    ...(pref.importedRuleTags || {}),
+    ...parsed,
+    ...imported,
+    compSameWeek: parsed.compSameWeek || imported.compDaySameWeekendWeek,
+    compWeekAfter: parsed.compWeekAfter || imported.compDayWeekAfterWeekend,
+    maxWeeklyHours: parsed.maxWeeklyHours || imported.maxWeeklyHours || null,
   };
+}
+
+function weeklyHours(row, week) {
+  return row.assignments
+    .filter((a) => getISOWeek(a.date) === week)
+    .reduce((sum, a) => sum + (a.hours || 0), 0);
 }
 
 function candidateCodesFor(emp, date, rules) {
   if (isWeekend(date)) return ["H", "L"];
-
   if (emp.eveningOnly || rules.eveningOnly) return ["K", "L"];
-
   return ["T", "M", "D", "N", "K", "L"];
 }
 
-function getWeekendPatternScore(rules, date, code) {
+function weekendPatternScore(rules, date, code) {
   if (!isWeekend(date)) return 0;
 
   const week = getISOWeek(date);
 
   if (rules.everySecondWeekend) {
     const shouldWork = week % 2 === 0;
-    if (shouldWork && code === "H") return 45;
-    if (!shouldWork && code === "L") return 45;
-    return -45;
+    if (shouldWork && code === "H") return 80;
+    if (!shouldWork && code === "L") return 80;
+    return -90;
   }
 
   if (rules.everyThirdWeekend) {
     const shouldWork = week % 3 === 0;
-    if (shouldWork && code === "H") return 55;
-    if (!shouldWork && code === "L") return 45;
-    return -55;
+    if (shouldWork && code === "H") return 90;
+    if (!shouldWork && code === "L") return 80;
+    return -100;
   }
 
   return 0;
@@ -98,6 +117,7 @@ function previousAssignment(row, index) {
 function scoreCandidate({ emp, pref, rules, date, code, index, row }) {
   const weekday = getWeekday(date);
   const weekend = isWeekend(date);
+  const week = getISOWeek(date);
   let score = 0;
   const reasons = [];
 
@@ -121,7 +141,18 @@ function scoreCandidate({ emp, pref, rules, date, code, index, row }) {
     return { score: -9999, reasons: ["Undviker 08-17"] };
   }
 
-  if (code === "L") score += 10;
+  const shift = SHIFT_DEFS[code] || SHIFT_DEFS.L;
+  const currentWeekHours = weeklyHours(row, week);
+  const maxWeeklyHours =
+    rules.maxWeeklyHours ||
+    Math.round(40 * (Number(emp.employmentPct || 100) / 100));
+
+  if (code !== "L" && currentWeekHours + shift.hours > maxWeeklyHours + 0.25) {
+    score -= 120;
+    reasons.push("Risk för för många timmar denna vecka");
+  }
+
+  if (code === "L") score += 12;
   if (code === "T") score += 70;
   if (code === "M") score += 68;
   if (code === "D") score += 62;
@@ -130,92 +161,86 @@ function scoreCandidate({ emp, pref, rules, date, code, index, row }) {
   if (code === "H") score += 55;
 
   if (Number(emp.employmentPct || 100) <= 82) {
-    if (code === "L") score += 22;
-    if (index % 5 === 0 && code !== "L") score -= 18;
+    if (code === "L") score += 28;
+    if (currentWeekHours >= 32 && code !== "L") score -= 50;
   }
 
   if (preferredOffDays.includes(weekday)) {
     if (code === "L") {
-      score += 80;
+      score += 90;
       reasons.push("Matchar önskad ledig dag");
     } else {
-      score -= 80;
+      score -= 95;
       reasons.push("Bryter mot önskad ledig dag");
     }
   }
 
   if (preferredWorkDays.includes(weekday)) {
-    if (code !== "L") {
-      score += 35;
-      reasons.push("Matchar önskad arbetsdag");
-    } else {
-      score -= 25;
-    }
+    if (code !== "L") score += 35;
+    if (code === "L") score -= 30;
   }
 
   if (rules.prefersEarly) {
-    if (code === "T" || code === "M") score += 35;
-    if (code === "K") score -= 25;
+    if (code === "T" || code === "M") score += 45;
+    if (code === "K") score -= 30;
   }
 
   if (rules.prefersLate) {
-    if (code === "K") score += 35;
-    if (code === "T") score -= 20;
+    if (code === "K") score += 45;
+    if (code === "T") score -= 35;
   }
 
   if (rules.prefersEightToFive && code === "D") {
-    score += 30;
+    score += 35;
   }
 
   if (rules.avoidsWeekend && weekend) {
-    if (code === "L") score += 50;
-    if (code === "H") score -= 60;
+    if (code === "L") score += 60;
+    if (code === "H") score -= 80;
   }
 
-  score += getWeekendPatternScore(rules, date, code);
+  score += weekendPatternScore(rules, date, code);
 
   const prev = previousAssignment(row, index);
 
   if (rules.avoidConsecutiveEvenings && prev?.code === "K" && code === "K") {
-    score -= 70;
+    score -= 90;
     reasons.push("Undviker kvällar i rad");
   }
 
   if (prev?.code === "K" && (code === "T" || code === "M")) {
-    score -= 60;
+    score -= 90;
     reasons.push("Undviker tidigt pass efter kväll");
   }
 
   if (rules.preferConsecutiveDaysOff && prev?.code === "L" && code === "L") {
-    score += 30;
+    score += 40;
   }
 
   if (rules.compSameWeek || rules.compWeekAfter) {
-    const week = getISOWeek(date);
     const hasWeekendThisWeek = row.assignments.some((a) => getISOWeek(a.date) === week && a.code === "H");
     const hasWeekendLastWeek = row.assignments.some((a) => getISOWeek(a.date) === week - 1 && a.code === "H");
 
     if ((rules.compSameWeek && hasWeekendThisWeek) || (rules.compWeekAfter && hasWeekendLastWeek)) {
-      if (!weekend && code === "L") score += 45;
-      if (!weekend && code !== "L") score -= 15;
+      if (!weekend && code === "L") score += 55;
+      if (!weekend && code !== "L") score -= 25;
     }
   }
 
   if (weekday === "friday" && code === "T") {
-    score += 12;
+    score += 20;
     reasons.push("Tidigt fredagspass prioriteras");
   }
 
   if (rules.twoWeekRotation) {
-    const week = getISOWeek(date);
-    if (week % 2 === 0 && code === "K") score += 10;
-    if (week % 2 !== 0 && (code === "T" || code === "M")) score += 10;
+    if (week % 2 === 0 && code === "K") score += 18;
+    if (week % 2 !== 0 && (code === "T" || code === "M")) score += 18;
   }
 
-  if (index % 5 === 0 && code === "T") score += 5;
-  if (index % 5 === 1 && code === "M") score += 5;
-  if (index % 5 === 2 && code === "N") score += 5;
-  if (index % 5 === 3 && code === "K") score += 5;
+  if (index % 5 === 0 && code === "T") score += 4;
+  if (index % 5 === 1 && code === "M") score += 4;
+  if (index % 5 === 2 && code === "N") score += 4;
+  if (index % 5 === 3 && code === "K") score += 4;
 
   return { score, reasons };
 }
@@ -272,6 +297,9 @@ function buildFallbackRows(employees = [], startDate, endDate, preferences = [])
     });
 
     row.totals.hours = row.assignments.reduce((sum, a) => sum + (a.hours || 0), 0);
+    row.totals.weekends = row.assignments.filter((a) => a.code === "H").length;
+    row.totals.evenings = row.assignments.filter((a) => a.code === "K").length;
+
     return row;
   });
 }
@@ -283,20 +311,31 @@ function buildFallbackDiagnostics(rows, preferences = []) {
     const pref = preferences.find((p) => p.employeeId === row.employeeId);
     const weekendCount = row.assignments.filter((a) => a.code === "H").length;
     const eveningCount = row.assignments.filter((a) => a.code === "K").length;
+    const broken = row.assignments.filter((a) =>
+      (a.preferenceReasons || []).some((r) => r.toLowerCase().includes("bryter"))
+    );
 
-    if (weekendCount >= 4) {
+    if (weekendCount >= 6) {
       deviations.push({
         severity: "medium",
         employeeName: row.employeeName,
-        message: `${row.employeeName} har relativt hög helgbelastning.`,
+        message: `${row.employeeName} har hög helgbelastning (${weekendCount} helgpass).`,
       });
     }
 
-    if (eveningCount >= 8) {
+    if (eveningCount >= 10) {
       deviations.push({
         severity: "medium",
         employeeName: row.employeeName,
-        message: `${row.employeeName} har många kvällspass under perioden.`,
+        message: `${row.employeeName} har många kvällspass (${eveningCount}).`,
+      });
+    }
+
+    if (broken.length > 0) {
+      deviations.push({
+        severity: "high",
+        employeeName: row.employeeName,
+        message: `${row.employeeName} har ${broken.length} brutna önskemål.`,
       });
     }
 
@@ -312,7 +351,7 @@ function buildFallbackDiagnostics(rows, preferences = []) {
   return {
     deviations,
     summary: {
-      hardRuleViolations: 0,
+      hardRuleViolations: deviations.filter((d) => d.severity === "high").length,
       preferenceConflicts: deviations.filter((d) => d.severity !== "low").length,
       interpretedPreferenceNotes: preferences.filter((p) => p.notes).length,
     },
@@ -345,7 +384,7 @@ export function generateScheduleFallback(payload = {}) {
     diagnostics,
     metadata: {
       generatedAt: new Date().toISOString(),
-      mode: "fallback-advanced-rules-v2",
+      mode: "fallback-smart-rules-v3",
       startDate: payload.startDate,
       endDate: payload.endDate,
       preferenceCount: (payload.preferences || []).length,
