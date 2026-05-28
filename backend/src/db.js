@@ -53,14 +53,18 @@ export async function initDb() {
     );
 
     CREATE TABLE IF NOT EXISTS generated_schedules (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      start_date DATE,
-      end_date DATE,
-      generated_json JSONB NOT NULL,
-      published BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-  `);
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  version INTEGER NOT NULL DEFAULT 1,
+  title TEXT DEFAULT '',
+  comment TEXT DEFAULT '',
+  generated_json JSONB NOT NULL,
+  status TEXT DEFAULT 'draft',
+  published BOOLEAN DEFAULT FALSE,
+  generated_by TEXT DEFAULT '',
+  start_date DATE,
+  end_date DATE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
 
   console.log("✅ Database initialized");
 }
