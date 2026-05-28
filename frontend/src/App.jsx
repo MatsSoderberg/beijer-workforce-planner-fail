@@ -335,17 +335,20 @@ setScheduleVersions((prev) => [savedVersion, ...prev]);
         </nav>
 
         {role === 'chef' && view === 'dashboard' && (
-         <Dashboard
-  generatedSchedule={generatedSchedule}
-  employees={employees}
-  dbStatus={dbStatus}
-  scheduleVersions={scheduleVersions}
-  onPublishSchedule={async (id) => {
-    await publishSchedule(id);
-    const versions = await loadSchedules();
-    setScheduleVersions(versions);
-  }}
-/>
+        {role === 'chef' && view === 'dashboard' && (
+ 
+          <Dashboard
+    generatedSchedule={generatedSchedule}
+    employees={employees}
+    dbStatus={dbStatus}
+    scheduleVersions={scheduleVersions}
+    onPublishSchedule={async (id) => {
+      await publishSchedule(id);
+      const versions = await loadSchedules();
+      setScheduleVersions(versions);
+    }}
+  />
+)}
 
         {role === 'chef' && view === 'wizard' && (
           <EditableSchedulingWizard
