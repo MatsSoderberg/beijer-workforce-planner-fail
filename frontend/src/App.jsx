@@ -328,35 +328,9 @@ function getShiftColor(code, manuallyEdited) {
       ))}
     </select>
 
-    {a.manuallyEdited && (
-      <div className="save-pill" style={{ marginTop: 6 }}>
-        Justerad
-      </div>
-    )}
-
-    {a.preferenceReasons?.length > 0 && (
-      <div className="muted small">
-        {a.preferenceReasons[0]}
-      </div>
-    )}
   </td>
 ))}
 
-{a.manuallyEdited && (
-  <div
-    className="save-pill"
-    style={{ marginTop: 6 }}
-  >
-    Justerad
-  </div>
-)}
-
-{a.preferenceReasons?.length > 0 && (
-  <div className="muted small">
-    {a.preferenceReasons[0]}
-  </div>
-)}
- 
                 <td style={{ padding: 10, fontWeight: 700 }}>
                   {hours}
                 </td>
