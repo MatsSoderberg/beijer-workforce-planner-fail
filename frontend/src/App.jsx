@@ -157,7 +157,6 @@ function updateAssignment(employeeId, date, newCode) {
 }
 
 }
-}
 
 function getDepartmentColor(department = "") {
   const d = department.toLowerCase();
