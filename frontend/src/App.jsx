@@ -61,37 +61,36 @@ function Dashboard({
   return (
     <div className="main-layout">
       <div className="stack">
-        <div className="grid four">
-          <KPI title="Medarbetare" value={employees.length} sub="Aktuell personalstyrka" />
-          <KPI title="Genererat" value={generatedSchedule ? 'Ja' : 'Nej'} sub="Senaste schema" />
-          <KPI title="Preferenser" value={generatedSchedule?.metadata?.preferenceCount ?? 0} sub="I genereringen" />
-          <KPI title="Databas" value={dbStatus} sub="Senaste synkstatus" />
-          <KPI
-  title="Schemakvalitet"
+       <div className="grid four">
+  <KPI title="Medarbetare" value={employees.length} sub="Aktuell personalstyrka" />
+  <KPI title="Genererat" value={generatedSchedule ? 'Ja' : 'Nej'} sub="Senaste schema" />
+  <KPI title="Preferenser" value={generatedSchedule?.metadata?.preferenceCount ?? 0} sub="I genereringen" />
+  <KPI title="Databas" value={dbStatus} sub="Senaste synkstatus" />
+
   <KPI
-  title="Konflikter"
-  value={generatedSchedule?.diagnostics?.summary?.preferenceConflicts ?? "-"}
-  sub="Totalt antal"
-/>
+    title="Schemakvalitet"
+    value={generatedSchedule?.diagnostics?.qualityScore ?? "-"}
+    sub="Poäng av 100"
+  />
 
-<KPI
-  title="Brutna önskemål"
-  value={generatedSchedule?.diagnostics?.summary?.brokenPreferences ?? "-"}
-  sub="Individuella önskemål"
-/>
+  <KPI
+    title="Konflikter"
+    value={generatedSchedule?.diagnostics?.summary?.preferenceConflicts ?? "-"}
+    sub="Totalt antal"
+  />
 
-<KPI
-  title="Kvällspass"
-  value={generatedSchedule?.diagnostics?.summary?.totalEvenings ?? "-"}
-  sub="Totalt i perioden"
-/>
+  <KPI
+    title="Brutna önskemål"
+    value={generatedSchedule?.diagnostics?.summary?.brokenPreferences ?? "-"}
+    sub="Individuella önskemål"
+  />
 
-<KPI
-  title="Helgpass"
-  value={generatedSchedule?.diagnostics?.summary?.totalWeekends ?? "-"}
-  sub="Totalt i perioden"
-/>          
-  value={generatedSchedule?.diagnostics?.qualityScore ?? "-"}
+  <KPI
+    title="Helgpass"
+    value={generatedSchedule?.diagnostics?.summary?.totalWeekends ?? "-"}
+    sub="Totalt i perioden"
+  />
+</div>  value={generatedSchedule?.diagnostics?.qualityScore ?? "-"}
   sub="Poäng av 100"
 />
         </div>
