@@ -66,6 +66,11 @@ function Dashboard({
           <KPI title="Genererat" value={generatedSchedule ? 'Ja' : 'Nej'} sub="Senaste schema" />
           <KPI title="Preferenser" value={generatedSchedule?.metadata?.preferenceCount ?? 0} sub="I genereringen" />
           <KPI title="Databas" value={dbStatus} sub="Senaste synkstatus" />
+          <KPI
+  title="Schemakvalitet"
+  value={generatedSchedule?.diagnostics?.qualityScore ?? "-"}
+  sub="Poäng av 100"
+/>
         </div>
 
         <GeneratedSchedulePreview generated={generatedSchedule} />
