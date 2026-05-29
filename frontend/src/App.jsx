@@ -155,6 +155,62 @@ function updateAssignment(employeeId, date, newCode) {
     );
   }
 }
+
+}
+}
+
+function getDepartmentColor(department = "") {
+  const d = department.toLowerCase();
+
+  if (d.includes("lager")) {
+    return "rgba(52,152,219,0.22)";
+  }
+
+  if (d.includes("färg")) {
+    return "rgba(46,204,113,0.22)";
+  }
+
+  if (d.includes("järn")) {
+    return "rgba(231,76,60,0.22)";
+  }
+
+  if (d.includes("kassa")) {
+    return "rgba(155,89,182,0.22)";
+  }
+
+  if (d.includes("proff")) {
+    return "rgba(241,196,15,0.22)";
+  }
+
+  return "rgba(255,255,255,0.08)";
+}
+
+function getShiftColor(code, manuallyEdited) {
+  if (manuallyEdited) {
+    return "rgba(255,255,255,0.24)";
+  }
+
+  switch (code) {
+    case "T":
+      return "rgba(241,196,15,0.24)";
+    case "M":
+      return "rgba(52,152,219,0.22)";
+    case "D":
+      return "rgba(46,204,113,0.22)";
+    case "N":
+      return "rgba(26,188,156,0.22)";
+    case "K":
+      return "rgba(155,89,182,0.26)";
+    case "H":
+      return "rgba(231,76,60,0.24)";
+    case "L":
+      return "rgba(255,255,255,0.05)";
+    default:
+      return "rgba(255,255,255,0.08)";
+  }
+}
+
+return (
   
   return (
     <div className="main-layout">
