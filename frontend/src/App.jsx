@@ -68,6 +68,29 @@ function Dashboard({
           <KPI title="Databas" value={dbStatus} sub="Senaste synkstatus" />
           <KPI
   title="Schemakvalitet"
+  <KPI
+  title="Konflikter"
+  value={generatedSchedule?.diagnostics?.summary?.preferenceConflicts ?? "-"}
+  sub="Totalt antal"
+/>
+
+<KPI
+  title="Brutna önskemål"
+  value={generatedSchedule?.diagnostics?.summary?.brokenPreferences ?? "-"}
+  sub="Individuella önskemål"
+/>
+
+<KPI
+  title="Kvällspass"
+  value={generatedSchedule?.diagnostics?.summary?.totalEvenings ?? "-"}
+  sub="Totalt i perioden"
+/>
+
+<KPI
+  title="Helgpass"
+  value={generatedSchedule?.diagnostics?.summary?.totalWeekends ?? "-"}
+  sub="Totalt i perioden"
+/>          
   value={generatedSchedule?.diagnostics?.qualityScore ?? "-"}
   sub="Poäng av 100"
 />
