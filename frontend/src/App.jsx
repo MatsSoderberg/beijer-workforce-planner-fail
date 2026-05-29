@@ -257,12 +257,41 @@ function updateAssignment(employeeId, date, newCode) {
                           : "rgba(255,255,255,0.08)",
                     }}
                   >
-                    <strong>{formatShift(a)}</strong>
-                    {a.preferenceReasons?.length > 0 && (
-                      <div className="muted small">
-                        {a.preferenceReasons[0]}
-                      </div>
-                    )}
+                  <select
+  className="pref-input"
+  value={a.code}
+  onChange={(e) =>
+    updateAssignment(
+      row.employeeId,
+      a.date,
+      e.target.value
+    )
+  }
+>
+  {shiftOptions.map((option) => (
+    <option
+      key={option.code}
+      value={option.code}
+    >
+      {option.label}
+    </option>
+  ))}
+</select>
+
+{a.manuallyEdited && (
+  <div
+    className="save-pill"
+    style={{ marginTop: 6 }}
+  >
+    Justerad
+  </div>
+)}
+
+{a.preferenceReasons?.length > 0 && (
+  <div className="muted small">
+    {a.preferenceReasons[0]}
+  </div>
+)}
                   </td>
                 ))}
 
