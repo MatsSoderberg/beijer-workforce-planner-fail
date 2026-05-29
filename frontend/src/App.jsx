@@ -303,15 +303,20 @@ return (
                   {row.employeeName}
                   <div className="muted small">{row.department}</div>
                 </td>
-                          ? "rgba(255,255,255,0.04)"
-                          : a.code === "K"
-                          ? "rgba(254,209,65,0.16)"
-                          : a.code === "H"
-                          ? "rgba(254,209,65,0.28)"
-                          : "rgba(255,255,255,0.08)",
-                    }}
-                  >
-                  <select
+                         background: getShiftColor(
+  a.code,
+  a.manuallyEdited
+),
+
+border:
+  a.preferenceReasons?.length > 0
+    ? "1px solid rgba(255,120,120,0.35)"
+    : "1px solid transparent",
+
+borderRadius: 10,
+transition: "all .18s ease",
+}}
+>
   className="pref-input"
   value={a.code}
   onChange={(e) =>
