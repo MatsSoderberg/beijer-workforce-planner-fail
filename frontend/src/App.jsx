@@ -436,9 +436,9 @@ function getShiftColor(code, manuallyEdited) {
           </div>
         </div>
       </div>
-    </div>
   );
 }
+
 function PreferencesView({ employees, preferences, setPreferences }) {
   const [selectedId, setSelectedId] = useState(employees[0]?.id || '');
   const [saveTick, setSaveTick] = useState(0);
