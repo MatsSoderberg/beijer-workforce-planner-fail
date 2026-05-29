@@ -356,9 +356,7 @@ function getShiftColor(code, manuallyEdited) {
     {a.preferenceReasons[0]}
   </div>
 )}
-                  </td>
-                ))}
-
+ 
                 <td style={{ padding: 10, fontWeight: 700 }}>
                   {hours}
                 </td>
