@@ -306,6 +306,88 @@ function buildFallbackRows(employees = [], startDate, endDate, preferences = [])
 
 function buildFallbackDiagnostics(rows, preferences = []) {
   const deviations = [];
+  let score = 100;
+
+  let totalWeekends = 0;
+  let totalEvenings = 0;
+  let brokenPreferences = 0;
+  let interpretedNotes = 0;
+
+  rows.forEach((row) => {
+    const pref = preferences.find((p) => p.employeeId === row.employeeId);
+    const weekendCount = row.assignments.filter((a) => a.code === "H").length;
+    const eveningCount = row.assignments.filter((a) => a.code === "K").length;
+
+    totalWeekends += weekendCount;
+    totalEvenings += eveningCount;
+
+    const broken = row.assignments.filter((a) =>
+      (a.preferenceReasons || []).some((r) =>
+        r.toLowerCase().includes("bryter")
+      )
+    );
+
+    brokenPreferences += broken.length;
+
+    if (pref?.notes) interpretedNotes += 1;
+
+    if (weekendCount >= 6) {
+      score -= 8;
+      deviations.push({
+        severity: "medium",
+        category: "Helgbelastning",
+        employeeName: row.employeeName,
+        message: `${row.employeeName} har hög helgbelastning (${weekendCount} helgpass).`,
+      });
+    }
+
+    if (eveningCount >= 10) {
+      score -= 6;
+      deviations.push({
+        severity: "medium",
+        category: "Kvällsbelastning",
+        employeeName: row.employeeName,
+        message: `${row.employeeName} har många kvällspass (${eveningCount}).`,
+      });
+    }
+
+    if (broken.length > 0) {
+      score -= broken.length * 4;
+      deviations.push({
+        severity: "high",
+        category: "Brutna önskemål",
+        employeeName: row.employeeName,
+        message: `${row.employeeName} har ${broken.length} brutna önskemål.`,
+      });
+    }
+
+    if (pref?.notes) {
+      deviations.push({
+        severity: "low",
+        category: "Tolkade önskemål",
+        employeeName: row.employeeName,
+        message: `${row.employeeName}s textönskemål och importerade regler har vägts in.`,
+      });
+    }
+  });
+
+  const qualityScore = Math.max(0, Math.min(100, Math.round(score)));
+
+  return {
+    qualityScore,
+    deviations,
+    summary: {
+      qualityScore,
+      hardRuleViolations: deviations.filter((d) => d.severity === "high").length,
+      preferenceConflicts: deviations.filter((d) => d.severity !== "low").length,
+      interpretedPreferenceNotes: interpretedNotes,
+      totalWeekends,
+      totalEvenings,
+      brokenPreferences,
+    },
+  };
+}
+  const deviations = [];
 
   rows.forEach((row) => {
     const pref = preferences.find((p) => p.employeeId === row.employeeId);
