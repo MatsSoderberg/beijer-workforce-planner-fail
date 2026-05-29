@@ -51,6 +51,22 @@ function KPI({ title, value, sub }) {
   );
 }
 
+function getISOWeek(dateStr) {
+  const date = new Date(dateStr + "T00:00:00");
+  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNr = (target.getUTCDay() + 6) % 7;
+  target.setUTCDate(target.getUTCDate() - dayNr + 3);
+  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
+  return 1 + Math.round((target - firstThursday) / (7 * 24 * 3600 * 1000));
+}
+
+function formatShift(a) {
+  if (!a) return "";
+  if (a.code === "L") return "Ledig";
+  if (a.start && a.end) return `${a.start}-${a.end}`;
+  return a.label || a.code || "";
+}
+
 function Dashboard({
   generatedSchedule,
   employees,
@@ -58,6 +74,21 @@ function Dashboard({
   scheduleVersions,
   onPublishSchedule
 }) {
+  const weeks = Array.from(
+  new Set(
+    generatedSchedule?.rows?.[0]?.assignments?.map((a) => getISOWeek(a.date)) || []
+  )
+);
+
+const [selectedWeek, setSelectedWeek] = useState(weeks[0] || null);
+
+const visibleWeek = selectedWeek || weeks[0];
+
+const weekDays =
+  generatedSchedule?.rows?.[0]?.assignments?.filter(
+    (a) => getISOWeek(a.date) === visibleWeek
+  ) || [];
+  
   return (
     <div className="main-layout">
       <div className="stack">
@@ -92,6 +123,94 @@ function Dashboard({
   />
 </div>  
   <GeneratedSchedulePreview generated={generatedSchedule} />
+
+{generatedSchedule?.rows?.length > 0 && (
+  <div className="card">
+    <div className="section-title">Veckovy</div>
+
+    <div className="top-gap">
+      <select
+        className="pref-input"
+        value={visibleWeek || ""}
+        onChange={(e) => setSelectedWeek(Number(e.target.value))}
+      >
+        {weeks.map((week) => (
+          <option key={week} value={week}>
+            Vecka {week}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div style={{ overflowX: "auto", marginTop: 16 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: "left", padding: 10 }}>Medarbetare</th>
+            {weekDays.map((d) => (
+              <th key={d.date} style={{ padding: 10 }}>
+                {d.date}
+              </th>
+            ))}
+            <th style={{ padding: 10 }}>Timmar</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {generatedSchedule.rows.map((row) => {
+            const assignments = row.assignments.filter(
+              (a) => getISOWeek(a.date) === visibleWeek
+            );
+
+            const hours = assignments.reduce(
+              (sum, a) => sum + (a.hours || 0),
+              0
+            );
+
+            return (
+              <tr key={row.employeeId}>
+                <td style={{ padding: 10, fontWeight: 700 }}>
+                  {row.employeeName}
+                  <div className="muted small">{row.department}</div>
+                </td>
+
+                {assignments.map((a) => (
+                  <td
+                    key={a.date}
+                    style={{
+                      padding: 10,
+                      borderTop: "1px solid rgba(255,255,255,0.12)",
+                      background:
+                        a.code === "L"
+                          ? "rgba(255,255,255,0.04)"
+                          : a.code === "K"
+                          ? "rgba(254,209,65,0.16)"
+                          : a.code === "H"
+                          ? "rgba(254,209,65,0.28)"
+                          : "rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <strong>{formatShift(a)}</strong>
+                    {a.preferenceReasons?.length > 0 && (
+                      <div className="muted small">
+                        {a.preferenceReasons[0]}
+                      </div>
+                    )}
+                  </td>
+                ))}
+
+                <td style={{ padding: 10, fontWeight: 700 }}>
+                  {hours}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+  
         {generatedSchedule?.diagnostics?.deviations?.length > 0 && (
   <div className="card">
     <div className="section-title">Konflikter & kvalitetsindikatorer</div>
