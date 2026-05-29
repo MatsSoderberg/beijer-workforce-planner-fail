@@ -387,59 +387,7 @@ function buildFallbackDiagnostics(rows, preferences = []) {
     },
   };
 }
-  const deviations = [];
-
-  rows.forEach((row) => {
-    const pref = preferences.find((p) => p.employeeId === row.employeeId);
-    const weekendCount = row.assignments.filter((a) => a.code === "H").length;
-    const eveningCount = row.assignments.filter((a) => a.code === "K").length;
-    const broken = row.assignments.filter((a) =>
-      (a.preferenceReasons || []).some((r) => r.toLowerCase().includes("bryter"))
-    );
-
-    if (weekendCount >= 6) {
-      deviations.push({
-        severity: "medium",
-        employeeName: row.employeeName,
-        message: `${row.employeeName} har hög helgbelastning (${weekendCount} helgpass).`,
-      });
-    }
-
-    if (eveningCount >= 10) {
-      deviations.push({
-        severity: "medium",
-        employeeName: row.employeeName,
-        message: `${row.employeeName} har många kvällspass (${eveningCount}).`,
-      });
-    }
-
-    if (broken.length > 0) {
-      deviations.push({
-        severity: "high",
-        employeeName: row.employeeName,
-        message: `${row.employeeName} har ${broken.length} brutna önskemål.`,
-      });
-    }
-
-    if (pref?.notes) {
-      deviations.push({
-        severity: "low",
-        employeeName: row.employeeName,
-        message: `${row.employeeName}s textönskemål och importerade regler har vägts in.`,
-      });
-    }
-  });
-
-  return {
-    deviations,
-    summary: {
-      hardRuleViolations: deviations.filter((d) => d.severity === "high").length,
-      preferenceConflicts: deviations.filter((d) => d.severity !== "low").length,
-      interpretedPreferenceNotes: preferences.filter((p) => p.notes).length,
-    },
-  };
-}
-
+  
 export async function generateScheduleFromBackend(payload = {}) {
   const res = await fetch("/api/schedule/generate", {
     method: "POST",
