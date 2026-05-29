@@ -413,8 +413,6 @@ function getShiftColor(code, manuallyEdited) {
 </div>
 );
 }
-  );
-}
 
 function PreferencesView({ employees, preferences, setPreferences }) {
   const [selectedId, setSelectedId] = useState(employees[0]?.id || '');
