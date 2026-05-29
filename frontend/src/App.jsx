@@ -408,8 +408,11 @@ function getShiftColor(code, manuallyEdited) {
               </div>
             ))}
           </div>
-        </div>
-      </div>
+  </div>
+</div>
+</div>
+);
+}
   );
 }
 
