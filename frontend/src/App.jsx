@@ -74,6 +74,23 @@ function Dashboard({
         </div>
 
         <GeneratedSchedulePreview generated={generatedSchedule} />
+        {generatedSchedule?.diagnostics?.deviations?.length > 0 && (
+  <div className="card">
+    <div className="section-title">Konflikter & kvalitetsindikatorer</div>
+
+    <div className="stack">
+      {generatedSchedule.diagnostics.deviations.slice(0, 8).map((d, idx) => (
+        <div key={idx} className="rule-card spread">
+          <div>
+            <strong>{d.category || "Indikator"}</strong>
+            <div className="muted small">{d.message}</div>
+          </div>
+          <div className="save-pill">{d.severity}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
       </div>
 
       <div className="stack">
