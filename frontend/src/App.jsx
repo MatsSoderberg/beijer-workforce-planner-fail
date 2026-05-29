@@ -88,6 +88,73 @@ const weekDays =
   generatedSchedule?.rows?.[0]?.assignments?.filter(
     (a) => getISOWeek(a.date) === visibleWeek
   ) || [];
+
+const shiftOptions = [
+  { code: "L", label: "Ledig" },
+  { code: "T", label: "06:00-15:00" },
+  { code: "M", label: "07:00-16:00" },
+  { code: "D", label: "08:00-17:00" },
+  { code: "N", label: "09:00-18:00" },
+  { code: "K", label: "10:00-19:00" },
+  { code: "H", label: "09:00-16:00 helg" },
+];
+
+function shiftFromCode(code) {
+  return {
+    L: { code: "L", label: "Ledig", hours: 0, start: "", end: "" },
+    T: { code: "T", label: "Tidigt", hours: 8, start: "06:00", end: "15:00" },
+    M: { code: "M", label: "Morgon", hours: 8, start: "07:00", end: "16:00" },
+    D: { code: "D", label: "Dag", hours: 8, start: "08:00", end: "17:00" },
+    N: { code: "N", label: "Normal", hours: 8, start: "09:00", end: "18:00" },
+    K: { code: "K", label: "Kväll", hours: 8, start: "10:00", end: "19:00" },
+    H: { code: "H", label: "Helg", hours: 7, start: "09:00", end: "16:00" },
+  }[code];
+}
+
+function updateAssignment(employeeId, date, newCode) {
+  if (!generatedSchedule) return;
+
+  const updated = {
+    ...generatedSchedule,
+    rows: generatedSchedule.rows.map((row) => {
+      if (row.employeeId !== employeeId) return row;
+
+      const assignments = row.assignments.map((a) => {
+        if (a.date !== date) return a;
+
+        const shift = shiftFromCode(newCode);
+
+        return {
+          ...a,
+          ...shift,
+          manuallyEdited: true,
+          preferenceReasons: ["Manuellt justerad"],
+        };
+      });
+
+      return {
+        ...row,
+        assignments,
+        totals: {
+          ...row.totals,
+          hours: assignments.reduce((sum, a) => sum + (a.hours || 0), 0),
+        },
+      };
+    }),
+    metadata: {
+      ...(generatedSchedule.metadata || {}),
+      manuallyEditedAt: new Date().toISOString(),
+    },
+  };
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("beijer:schedule-edited", {
+        detail: updated,
+      })
+    );
+  }
+}
   
   return (
     <div className="main-layout">
@@ -450,6 +517,18 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [plannerLoaded, employees, preferences, generatedSchedule]);
 
+useEffect(() => {
+  function onScheduleEdited(event) {
+    handleGeneratedSchedule(event.detail);
+  }
+
+  window.addEventListener("beijer:schedule-edited", onScheduleEdited);
+
+  return () => {
+    window.removeEventListener("beijer:schedule-edited", onScheduleEdited);
+  };
+}, [employees, preferences, generatedSchedule]);
+  
   async function handleGeneratedSchedule(generated) {
   setGeneratedSchedule(generated);
   setView('dashboard');
