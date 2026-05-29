@@ -75,291 +75,250 @@ function Dashboard({
   onPublishSchedule
 }) {
   const weeks = Array.from(
-  new Set(
-    generatedSchedule?.rows?.[0]?.assignments?.map((a) => getISOWeek(a.date)) || []
-  )
-);
+    new Set(
+      generatedSchedule?.rows?.[0]?.assignments?.map((a) => getISOWeek(a.date)) || []
+    )
+  );
 
-const [selectedWeek, setSelectedWeek] = useState(weeks[0] || null);
+  const [selectedWeek, setSelectedWeek] = useState(weeks[0] || null);
+  const visibleWeek = selectedWeek || weeks[0];
 
-const visibleWeek = selectedWeek || weeks[0];
+  const weekDays =
+    generatedSchedule?.rows?.[0]?.assignments?.filter(
+      (a) => getISOWeek(a.date) === visibleWeek
+    ) || [];
 
-const weekDays =
-  generatedSchedule?.rows?.[0]?.assignments?.filter(
-    (a) => getISOWeek(a.date) === visibleWeek
-  ) || [];
+  const shiftOptions = [
+    { code: "L", label: "Ledig" },
+    { code: "T", label: "06:00-15:00" },
+    { code: "M", label: "07:00-16:00" },
+    { code: "D", label: "08:00-17:00" },
+    { code: "N", label: "09:00-18:00" },
+    { code: "K", label: "10:00-19:00" },
+    { code: "H", label: "09:00-16:00 helg" },
+  ];
 
-const shiftOptions = [
-  { code: "L", label: "Ledig" },
-  { code: "T", label: "06:00-15:00" },
-  { code: "M", label: "07:00-16:00" },
-  { code: "D", label: "08:00-17:00" },
-  { code: "N", label: "09:00-18:00" },
-  { code: "K", label: "10:00-19:00" },
-  { code: "H", label: "09:00-16:00 helg" },
-];
+  function shiftFromCode(code) {
+    return {
+      L: { code: "L", label: "Ledig", hours: 0, start: "", end: "" },
+      T: { code: "T", label: "Tidigt", hours: 8, start: "06:00", end: "15:00" },
+      M: { code: "M", label: "Morgon", hours: 8, start: "07:00", end: "16:00" },
+      D: { code: "D", label: "Dag", hours: 8, start: "08:00", end: "17:00" },
+      N: { code: "N", label: "Normal", hours: 8, start: "09:00", end: "18:00" },
+      K: { code: "K", label: "Kväll", hours: 8, start: "10:00", end: "19:00" },
+      H: { code: "H", label: "Helg", hours: 7, start: "09:00", end: "16:00" },
+    }[code];
+  }
 
-function shiftFromCode(code) {
-  return {
-    L: { code: "L", label: "Ledig", hours: 0, start: "", end: "" },
-    T: { code: "T", label: "Tidigt", hours: 8, start: "06:00", end: "15:00" },
-    M: { code: "M", label: "Morgon", hours: 8, start: "07:00", end: "16:00" },
-    D: { code: "D", label: "Dag", hours: 8, start: "08:00", end: "17:00" },
-    N: { code: "N", label: "Normal", hours: 8, start: "09:00", end: "18:00" },
-    K: { code: "K", label: "Kväll", hours: 8, start: "10:00", end: "19:00" },
-    H: { code: "H", label: "Helg", hours: 7, start: "09:00", end: "16:00" },
-  }[code];
-}
+  function getDepartmentColor(department = "") {
+    const d = department.toLowerCase();
+    if (d.includes("lager")) return "rgba(52,152,219,0.22)";
+    if (d.includes("färg")) return "rgba(46,204,113,0.22)";
+    if (d.includes("järn")) return "rgba(231,76,60,0.22)";
+    if (d.includes("kassa")) return "rgba(155,89,182,0.22)";
+    if (d.includes("proff")) return "rgba(241,196,15,0.22)";
+    return "rgba(255,255,255,0.08)";
+  }
 
-function updateAssignment(employeeId, date, newCode) {
-  if (!generatedSchedule) return;
+  function getShiftColor(code, manuallyEdited) {
+    if (manuallyEdited) return "rgba(255,255,255,0.24)";
 
-  const updated = {
-    ...generatedSchedule,
-    rows: generatedSchedule.rows.map((row) => {
-      if (row.employeeId !== employeeId) return row;
+    switch (code) {
+      case "T": return "rgba(241,196,15,0.24)";
+      case "M": return "rgba(52,152,219,0.22)";
+      case "D": return "rgba(46,204,113,0.22)";
+      case "N": return "rgba(26,188,156,0.22)";
+      case "K": return "rgba(155,89,182,0.26)";
+      case "H": return "rgba(231,76,60,0.24)";
+      case "L": return "rgba(255,255,255,0.05)";
+      default: return "rgba(255,255,255,0.08)";
+    }
+  }
 
-      const assignments = row.assignments.map((a) => {
-        if (a.date !== date) return a;
+  function updateAssignment(employeeId, date, newCode) {
+    if (!generatedSchedule) return;
 
-        const shift = shiftFromCode(newCode);
+    const updated = {
+      ...generatedSchedule,
+      rows: generatedSchedule.rows.map((row) => {
+        if (row.employeeId !== employeeId) return row;
+
+        const assignments = row.assignments.map((a) => {
+          if (a.date !== date) return a;
+          const shift = shiftFromCode(newCode);
+
+          return {
+            ...a,
+            ...shift,
+            manuallyEdited: true,
+            preferenceReasons: ["Manuellt justerad"],
+          };
+        });
 
         return {
-          ...a,
-          ...shift,
-          manuallyEdited: true,
-          preferenceReasons: ["Manuellt justerad"],
+          ...row,
+          assignments,
+          totals: {
+            ...row.totals,
+            hours: assignments.reduce((sum, a) => sum + (a.hours || 0), 0),
+          },
         };
-      });
+      }),
+      metadata: {
+        ...(generatedSchedule.metadata || {}),
+        manuallyEditedAt: new Date().toISOString(),
+      },
+    };
 
-      return {
-        ...row,
-        assignments,
-        totals: {
-          ...row.totals,
-          hours: assignments.reduce((sum, a) => sum + (a.hours || 0), 0),
-        },
-      };
-    }),
-    metadata: {
-      ...(generatedSchedule.metadata || {}),
-      manuallyEditedAt: new Date().toISOString(),
-    },
-  };
-
-  if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent("beijer:schedule-edited", {
         detail: updated,
       })
     );
   }
-}
-
-}
-
-function getDepartmentColor(department = "") {
-  const d = department.toLowerCase();
-
-  if (d.includes("lager")) {
-    return "rgba(52,152,219,0.22)";
-  }
-
-  if (d.includes("färg")) {
-    return "rgba(46,204,113,0.22)";
-  }
-
-  if (d.includes("järn")) {
-    return "rgba(231,76,60,0.22)";
-  }
-
-  if (d.includes("kassa")) {
-    return "rgba(155,89,182,0.22)";
-  }
-
-  if (d.includes("proff")) {
-    return "rgba(241,196,15,0.22)";
-  }
-
-  return "rgba(255,255,255,0.08)";
-}
-
-function getShiftColor(code, manuallyEdited) {
-  if (manuallyEdited) {
-    return "rgba(255,255,255,0.24)";
-  }
-
-  switch (code) {
-    case "T":
-      return "rgba(241,196,15,0.24)";
-    case "M":
-      return "rgba(52,152,219,0.22)";
-    case "D":
-      return "rgba(46,204,113,0.22)";
-    case "N":
-      return "rgba(26,188,156,0.22)";
-    case "K":
-      return "rgba(155,89,182,0.26)";
-    case "H":
-      return "rgba(231,76,60,0.24)";
-    case "L":
-      return "rgba(255,255,255,0.05)";
-    default:
-      return "rgba(255,255,255,0.08)";
-  }
-}
 
   return (
     <div className="main-layout">
       <div className="stack">
-       <div className="grid four">
-  <KPI title="Medarbetare" value={employees.length} sub="Aktuell personalstyrka" />
-  <KPI title="Genererat" value={generatedSchedule ? 'Ja' : 'Nej'} sub="Senaste schema" />
-  <KPI title="Preferenser" value={generatedSchedule?.metadata?.preferenceCount ?? 0} sub="I genereringen" />
-  <KPI title="Databas" value={dbStatus} sub="Senaste synkstatus" />
-
-  <KPI
-    title="Schemakvalitet"
-    value={generatedSchedule?.diagnostics?.qualityScore ?? "-"}
-    sub="Poäng av 100"
-  />
-
-  <KPI
-    title="Konflikter"
-    value={generatedSchedule?.diagnostics?.summary?.preferenceConflicts ?? "-"}
-    sub="Totalt antal"
-  />
-
-  <KPI
-    title="Brutna önskemål"
-    value={generatedSchedule?.diagnostics?.summary?.brokenPreferences ?? "-"}
-    sub="Individuella önskemål"
-  />
-
-  <KPI
-    title="Helgpass"
-    value={generatedSchedule?.diagnostics?.summary?.totalWeekends ?? "-"}
-    sub="Totalt i perioden"
-  />
-</div>  
-  <GeneratedSchedulePreview generated={generatedSchedule} />
-
-{generatedSchedule?.rows?.length > 0 && (
-  <div className="card">
-    <div className="section-title">Veckovy</div>
-
-    <div className="top-gap">
-      <select
-        className="pref-input"
-        value={visibleWeek || ""}
-        onChange={(e) => setSelectedWeek(Number(e.target.value))}
-      >
-        {weeks.map((week) => (
-          <option key={week} value={week}>
-            Vecka {week}
-          </option>
-        ))}
-      </select>
-    </div>
-
-    <div style={{ overflowX: "auto", marginTop: 16 }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: "left", padding: 10 }}>Medarbetare</th>
-            {weekDays.map((d) => (
-              <th key={d.date} style={{ padding: 10 }}>
-                {d.date}
-              </th>
-            ))}
-            <th style={{ padding: 10 }}>Timmar</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {generatedSchedule.rows.map((row) => {
-            const assignments = row.assignments.filter(
-              (a) => getISOWeek(a.date) === visibleWeek
-            );
-
-            const hours = assignments.reduce(
-              (sum, a) => sum + (a.hours || 0),
-              0
-            );
-
-            return (
-              <tr key={row.employeeId}>
-             <td
-  style={{
-    padding: 10,
-    fontWeight: 700,
-    background: getDepartmentColor(row.department),
-    borderRadius: 10,
-  }}
->
-                  {row.employeeName}
-                  <div className="muted small">{row.department}</div>
-                </td>
- {assignments.map((a) => (
-  <td
-    key={a.date}
-    style={{
-      padding: 10,
-      borderTop: "1px solid rgba(255,255,255,0.12)",
-      background: getShiftColor(a.code, a.manuallyEdited),
-      border: a.preferenceReasons?.length > 0
-        ? "1px solid rgba(255,120,120,0.35)"
-        : "1px solid transparent",
-      borderRadius: 10,
-      transition: "all .18s ease",
-    }}
-  >
-    <select
-      className="pref-input"
-      value={a.code}
-      onChange={(e) =>
-        updateAssignment(row.employeeId, a.date, e.target.value)
-      }
-    >
-      {shiftOptions.map((option) => (
-        <option key={option.code} value={option.code}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-
-  </td>
-))}
-
-                <td style={{ padding: 10, fontWeight: 700 }}>
-                  {hours}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
-  
-        {generatedSchedule?.diagnostics?.deviations?.length > 0 && (
-  <div className="card">
-    <div className="section-title">Konflikter & kvalitetsindikatorer</div>
-
-    <div className="stack">
-      {generatedSchedule.diagnostics.deviations.slice(0, 8).map((d, idx) => (
-        <div key={idx} className="rule-card spread">
-          <div>
-            <strong>{d.category || "Indikator"}</strong>
-            <div className="muted small">{d.message}</div>
-          </div>
-          <div className="save-pill">{d.severity}</div>
+        <div className="grid four">
+          <KPI title="Medarbetare" value={employees.length} sub="Aktuell personalstyrka" />
+          <KPI title="Genererat" value={generatedSchedule ? "Ja" : "Nej"} sub="Senaste schema" />
+          <KPI title="Preferenser" value={generatedSchedule?.metadata?.preferenceCount ?? 0} sub="I genereringen" />
+          <KPI title="Databas" value={dbStatus} sub="Senaste synkstatus" />
+          <KPI title="Schemakvalitet" value={generatedSchedule?.diagnostics?.qualityScore ?? "-"} sub="Poäng av 100" />
+          <KPI title="Konflikter" value={generatedSchedule?.diagnostics?.summary?.preferenceConflicts ?? "-"} sub="Totalt antal" />
+          <KPI title="Brutna önskemål" value={generatedSchedule?.diagnostics?.summary?.brokenPreferences ?? "-"} sub="Individuella önskemål" />
+          <KPI title="Helgpass" value={generatedSchedule?.diagnostics?.summary?.totalWeekends ?? "-"} sub="Totalt i perioden" />
         </div>
-      ))}
-    </div>
-  </div>
-)}
+
+        <GeneratedSchedulePreview generated={generatedSchedule} />
+
+        {generatedSchedule?.rows?.length > 0 && (
+          <div className="card">
+            <div className="section-title">Veckovy</div>
+
+            <div className="top-gap">
+              <select
+                className="pref-input"
+                value={visibleWeek || ""}
+                onChange={(e) => setSelectedWeek(Number(e.target.value))}
+              >
+                {weeks.map((week) => (
+                  <option key={week} value={week}>
+                    Vecka {week}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ overflowX: "auto", marginTop: 16 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", padding: 10 }}>Medarbetare</th>
+                    {weekDays.map((d) => (
+                      <th key={d.date} style={{ padding: 10 }}>{d.date}</th>
+                    ))}
+                    <th style={{ padding: 10 }}>Timmar</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {generatedSchedule.rows.map((row) => {
+                    const assignments = row.assignments.filter(
+                      (a) => getISOWeek(a.date) === visibleWeek
+                    );
+
+                    const hours = assignments.reduce(
+                      (sum, a) => sum + (a.hours || 0),
+                      0
+                    );
+
+                    return (
+                      <tr key={row.employeeId}>
+                        <td
+                          style={{
+                            padding: 10,
+                            fontWeight: 700,
+                            background: getDepartmentColor(row.department),
+                            borderRadius: 10,
+                          }}
+                        >
+                          {row.employeeName}
+                          <div className="muted small">{row.department}</div>
+                        </td>
+
+                        {assignments.map((a) => (
+                          <td
+                            key={a.date}
+                            style={{
+                              padding: 10,
+                              borderTop: "1px solid rgba(255,255,255,0.12)",
+                              background: getShiftColor(a.code, a.manuallyEdited),
+                              border: a.preferenceReasons?.length > 0
+                                ? "1px solid rgba(255,120,120,0.35)"
+                                : "1px solid transparent",
+                              borderRadius: 10,
+                              transition: "all .18s ease",
+                            }}
+                          >
+                            <select
+                              className="pref-input"
+                              value={a.code}
+                              onChange={(e) =>
+                                updateAssignment(row.employeeId, a.date, e.target.value)
+                              }
+                            >
+                              {shiftOptions.map((option) => (
+                                <option key={option.code} value={option.code}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+
+                            {a.manuallyEdited && (
+                              <div className="save-pill" style={{ marginTop: 6 }}>
+                                Justerad
+                              </div>
+                            )}
+
+                            {a.preferenceReasons?.length > 0 && (
+                              <div className="muted small">
+                                {a.preferenceReasons[0]}
+                              </div>
+                            )}
+                          </td>
+                        ))}
+
+                        <td style={{ padding: 10, fontWeight: 700 }}>
+                          {hours}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {generatedSchedule?.diagnostics?.deviations?.length > 0 && (
+          <div className="card">
+            <div className="section-title">Konflikter & kvalitetsindikatorer</div>
+
+            <div className="stack">
+              {generatedSchedule.diagnostics.deviations.slice(0, 8).map((d, idx) => (
+                <div key={idx} className="rule-card spread">
+                  <div>
+                    <strong>{d.category || "Indikator"}</strong>
+                    <div className="muted small">{d.message}</div>
+                  </div>
+                  <div className="save-pill">{d.severity}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="stack">
@@ -370,15 +329,12 @@ function getShiftColor(code, manuallyEdited) {
           </div>
         </div>
 
-        <div className="card" style={{ maxHeight: 420, overflowY: 'auto' }}>
+        <div className="card" style={{ maxHeight: 420, overflowY: "auto" }}>
           <div className="section-title">Schemaversioner</div>
 
           <div className="stack">
             {scheduleVersions?.slice(0, 5).map((schedule) => (
-              <div
-                key={schedule.id}
-                className="rule-card spread"
-              >
+              <div key={schedule.id} className="rule-card spread">
                 <div>
                   <strong>{schedule.title}</strong>
 
@@ -387,7 +343,7 @@ function getShiftColor(code, manuallyEdited) {
                   </div>
 
                   <div className="muted small">
-                    {new Date(schedule.created_at).toLocaleString('sv-SE')}
+                    {new Date(schedule.created_at).toLocaleString("sv-SE")}
                   </div>
                 </div>
 
@@ -401,17 +357,15 @@ function getShiftColor(code, manuallyEdited) {
                 )}
 
                 {schedule.published && (
-                  <div className="save-pill">
-                    Publicerad
-                  </div>
+                  <div className="save-pill">Publicerad</div>
                 )}
               </div>
             ))}
           </div>
-  </div>
-</div>
-</div>
-);
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function PreferencesView({ employees, preferences, setPreferences }) {
