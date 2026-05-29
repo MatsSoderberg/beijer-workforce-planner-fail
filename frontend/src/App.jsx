@@ -300,39 +300,47 @@ function getShiftColor(code, manuallyEdited) {
                   {row.employeeName}
                   <div className="muted small">{row.department}</div>
                 </td>
-                         background: getShiftColor(
-  a.code,
-  a.manuallyEdited
-),
-
-border:
-  a.preferenceReasons?.length > 0
-    ? "1px solid rgba(255,120,120,0.35)"
-    : "1px solid transparent",
-
-borderRadius: 10,
-transition: "all .18s ease",
-}}
->
-  className="pref-input"
-  value={a.code}
-  onChange={(e) =>
-    updateAssignment(
-      row.employeeId,
-      a.date,
-      e.target.value
-    )
-  }
->
-  {shiftOptions.map((option) => (
-    <option
-      key={option.code}
-      value={option.code}
+ {assignments.map((a) => (
+  <td
+    key={a.date}
+    style={{
+      padding: 10,
+      borderTop: "1px solid rgba(255,255,255,0.12)",
+      background: getShiftColor(a.code, a.manuallyEdited),
+      border: a.preferenceReasons?.length > 0
+        ? "1px solid rgba(255,120,120,0.35)"
+        : "1px solid transparent",
+      borderRadius: 10,
+      transition: "all .18s ease",
+    }}
+  >
+    <select
+      className="pref-input"
+      value={a.code}
+      onChange={(e) =>
+        updateAssignment(row.employeeId, a.date, e.target.value)
+      }
     >
-      {option.label}
-    </option>
-  ))}
-</select>
+      {shiftOptions.map((option) => (
+        <option key={option.code} value={option.code}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+
+    {a.manuallyEdited && (
+      <div className="save-pill" style={{ marginTop: 6 }}>
+        Justerad
+      </div>
+    )}
+
+    {a.preferenceReasons?.length > 0 && (
+      <div className="muted small">
+        {a.preferenceReasons[0]}
+      </div>
+    )}
+  </td>
+))}
 
 {a.manuallyEdited && (
   <div
