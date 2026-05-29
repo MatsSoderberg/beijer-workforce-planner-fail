@@ -90,12 +90,8 @@ function Dashboard({
     value={generatedSchedule?.diagnostics?.summary?.totalWeekends ?? "-"}
     sub="Totalt i perioden"
   />
-</div>  value={generatedSchedule?.diagnostics?.qualityScore ?? "-"}
-  sub="Poäng av 100"
-/>
-        </div>
-
-        <GeneratedSchedulePreview generated={generatedSchedule} />
+</div>  
+  <GeneratedSchedulePreview generated={generatedSchedule} />
         {generatedSchedule?.diagnostics?.deviations?.length > 0 && (
   <div className="card">
     <div className="section-title">Konflikter & kvalitetsindikatorer</div>
