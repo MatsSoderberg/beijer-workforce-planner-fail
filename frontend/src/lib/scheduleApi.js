@@ -120,6 +120,18 @@ function scoreCandidate({ emp, pref, rules, date, code, index, row }) {
   const week = getISOWeek(date);
   let score = 0;
   const reasons = [];
+  const currentEvenings = row.assignments.filter((a) => a.code === "K").length;
+const currentWeekends = row.assignments.filter((a) => a.code === "H").length;
+
+if (code === "K" && currentEvenings >= 4) {
+  score -= 35;
+  reasons.push("Kvällspass balanseras mot övriga medarbetare");
+}
+
+if (code === "H" && currentWeekends >= 3) {
+  score -= 45;
+  reasons.push("Helgpass balanseras mot övriga medarbetare");
+}
 
   const fixedTimeOff = pref.fixedTimeOff || [];
   const preferredOffDays = pref.preferredOffDays || [];
