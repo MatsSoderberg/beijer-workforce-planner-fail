@@ -209,8 +209,6 @@ function getShiftColor(code, manuallyEdited) {
   }
 }
 
-return (
-  
   return (
     <div className="main-layout">
       <div className="stack">
