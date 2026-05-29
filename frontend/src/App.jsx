@@ -292,19 +292,17 @@ return (
 
             return (
               <tr key={row.employeeId}>
-                <td style={{ padding: 10, fontWeight: 700 }}>
+             <td
+  style={{
+    padding: 10,
+    fontWeight: 700,
+    background: getDepartmentColor(row.department),
+    borderRadius: 10,
+  }}
+>
                   {row.employeeName}
                   <div className="muted small">{row.department}</div>
                 </td>
-
-                {assignments.map((a) => (
-                  <td
-                    key={a.date}
-                    style={{
-                      padding: 10,
-                      borderTop: "1px solid rgba(255,255,255,0.12)",
-                      background:
-                        a.code === "L"
                           ? "rgba(255,255,255,0.04)"
                           : a.code === "K"
                           ? "rgba(254,209,65,0.16)"
