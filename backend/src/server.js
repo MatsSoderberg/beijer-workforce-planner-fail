@@ -101,7 +101,6 @@ const rows =
 
   const sheet = workbook.addWorksheet('Schema');
   sheet.getCell('A1').value = 'TEST EXPORT VERSION 2';
-sheet.getCell('A1').value = 'TEST EXPORT VERSION 2';
   const dates = rows[0]?.assignments?.map((a) => a.date) || [];
 
   sheet.columns = [
