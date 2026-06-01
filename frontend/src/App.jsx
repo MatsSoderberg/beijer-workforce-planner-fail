@@ -690,19 +690,3 @@ useEffect(() => {
     </div>
   );
 }
-.pref-input {
-  background: rgba(20, 24, 26, 0.92);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.22);
-  border-radius: 12px;
-  padding: 8px 10px;
-}
-
-.pref-input option {
-  background: #202426;
-  color: #ffffff;
-}
-
-.pref-input:focus {
-  outline: 2px solid rgba(254,209,65,0.65);
-}
