@@ -466,9 +466,18 @@ const [reviewedAction, setReviewedAction] = useState(null);
           <button
             type="button"
             className="btn ghost"
-            onClick={() =>
-              ask(`Granska förslag ${index + 1}: ${card.action}`)
-            }
+           onClick={() => {
+  const review = formatSuggestionReview(card, generated);
+  setReviewedAction({ ...card, review });
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "assistant",
+      text: review,
+    },
+  ]);
+}}
           >
             Granska
           </button>
