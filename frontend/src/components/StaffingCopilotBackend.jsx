@@ -232,7 +232,15 @@ function answer(question, generated, preferences) {
     return `Underbemanning jag hittar:\n${under.map((d, i) => `${i + 1}. ${d.message}`).join("\n")}`;
   }
 
-  if (q.includes("förbättra") || q.includes("föreslå") || q.includes("förslag")) {
+ if (
+  q.includes("förbättra") ||
+  q.includes("föreslå") ||
+  q.includes("förslag") ||
+  q.includes("åtgärd") ||
+  q.includes("ändra")
+) {
+  return formatActionSuggestions(generated);
+}
     return suggestImprovements(generated);
   }
 
