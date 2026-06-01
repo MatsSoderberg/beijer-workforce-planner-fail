@@ -672,10 +672,11 @@ useEffect(() => {
         )}
 
         {role === 'chef' && view === 'copilot' && (
-          <StaffingCopilotBackend
-            generated={generatedSchedule}
-            preferences={preferences}
-          />
+         <StaffingCopilotBackend
+  generated={generatedSchedule}
+  preferences={preferences}
+  setGenerated={setGeneratedSchedule}
+/>
         )}
 
         {role !== 'chef' && view === 'personal' && (
