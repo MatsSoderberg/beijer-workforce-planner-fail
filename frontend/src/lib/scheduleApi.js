@@ -499,7 +499,7 @@ export async function generateScheduleFromBackend(payload = {}) {
 }
 
 export function generateScheduleFallback(payload = {}) {
-  const rows = buildFallbackRows(
+  let rows = buildFallbackRows(
     payload.employees || [],
     payload.startDate,
     payload.endDate,
