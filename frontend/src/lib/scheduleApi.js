@@ -316,6 +316,63 @@ function buildFallbackRows(employees = [], startDate, endDate, preferences = [])
   });
 }
 
+function enforceWeekendStaffing(rows, staffing = {}) {
+  const weekendReq = staffing.weekend || { Kassa: 1, Färg: 1, Järn: 1 };
+
+  rows[0]?.assignments?.forEach((day) => {
+    if (!isWeekend(day.date)) return;
+
+    ["Kassa", "Färg", "Järn"].forEach((dept) => {
+      const required = weekendReq[dept] || 0;
+
+      const working = rows.filter((row) => {
+        const a = row.assignments.find((x) => x.date === day.date);
+        return row.department === dept && a && a.code !== "L";
+      });
+
+      const missing = required - working.length;
+      if (missing <= 0) return;
+
+      const candidates = rows
+        .filter((row) => row.department === dept)
+        .filter((row) => {
+          const a = row.assignments.find((x) => x.date === day.date);
+          return a && a.code === "L";
+        })
+        .sort((a, b) => {
+          const aWeekend = a.assignments.filter((x) => x.code === "H").length;
+          const bWeekend = b.assignments.filter((x) => x.code === "H").length;
+          return aWeekend - bWeekend;
+        })
+        .slice(0, missing);
+
+      candidates.forEach((row) => {
+        row.assignments = row.assignments.map((a) => {
+          if (a.date !== day.date) return a;
+
+          return {
+            ...a,
+            code: "H",
+            label: "Helg",
+            start: "09:00",
+            end: "16:00",
+            hours: 7,
+            preferenceReasons: ["Helgbemanning prioriterades"],
+          };
+        });
+
+        row.totals.hours = row.assignments.reduce(
+          (sum, a) => sum + (a.hours || 0),
+          0
+        );
+        row.totals.weekends = row.assignments.filter((a) => a.code === "H").length;
+      });
+    });
+  });
+
+  return rows;
+}
+
 function buildFallbackDiagnostics(rows, preferences = [], staffing = {}) {
   const deviations = [];
   let score = 100;
