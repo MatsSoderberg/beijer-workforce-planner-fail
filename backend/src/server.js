@@ -160,9 +160,9 @@ function getShiftColor(code) {
    deptCell.fill = {
   type: 'pattern',
   pattern: 'solid',
-  foregroundColor: {
-    argb: getDepartmentColor(row.department),
-  },
+  fgColor: {
+  argb: getDepartmentColor(row.department),
+},
 };
     deptCell.font = {
   color: { argb: 'FFFFFFFF' },
@@ -176,9 +176,9 @@ function getShiftColor(code) {
     cell.fill = {
   type: 'pattern',
   pattern: 'solid',
-  foregroundColor: {
-    argb: getShiftColor(a.code),
-  },
+  fgColor: {
+  argb: getShiftColor(a.code),
+},
 };
 
      cell.font = {
