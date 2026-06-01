@@ -316,7 +316,7 @@ function buildFallbackRows(employees = [], startDate, endDate, preferences = [])
   });
 }
 
-function buildFallbackDiagnostics(rows, preferences = []) {
+function buildFallbackDiagnostics(rows, preferences = [], staffing = {}) {
   const deviations = [];
   let score = 100;
 
@@ -382,7 +382,36 @@ function buildFallbackDiagnostics(rows, preferences = []) {
       });
     }
   });
+const staffingIssues = [];
 
+rows[0]?.assignments?.forEach((day) => {
+  const weekend = isWeekend(day.date);
+  const requirements = weekend ? staffing.weekend : staffing.weekday;
+
+  if (!requirements) return;
+
+  ["Kassa", "Färg", "Järn"].forEach((dept) => {
+    const required = requirements[dept] || 0;
+
+    const actual = rows.filter((row) => {
+      const assignment = row.assignments.find((a) => a.date === day.date);
+      return row.department === dept && assignment && assignment.code !== "L";
+    }).length;
+
+    if (actual < required) {
+      score -= 10;
+
+      staffingIssues.push({
+        severity: "high",
+        category: "Underbemanning",
+        employeeName: dept,
+        message: `${dept} är underbemannad ${day.date}: ${actual}/${required} bemannade.`,
+      });
+    }
+  });
+});
+
+deviations.push(...staffingIssues);
   const qualityScore = Math.max(0, Math.min(100, Math.round(score)));
 
   return {
@@ -396,6 +425,7 @@ function buildFallbackDiagnostics(rows, preferences = []) {
       totalWeekends,
       totalEvenings,
       brokenPreferences,
+      understaffedDays: staffingIssues.length,
     },
   };
 }
@@ -419,8 +449,12 @@ export function generateScheduleFallback(payload = {}) {
     payload.preferences || []
   );
 
-  const diagnostics = buildFallbackDiagnostics(rows, payload.preferences || []);
-
+  const diagnostics = buildFallbackDiagnostics(
+  rows,
+  payload.preferences || [],
+  payload.staffing || {}
+);
+  
   return {
     rows,
     diagnostics,
