@@ -363,6 +363,47 @@ export default function StaffingCopilotBackend({ generated, preferences }) {
         ))}
       </div>
 
+     {actionCards.length > 0 && (
+  <div className="eva-action-panel">
+    <div className="section-title">Evas åtgärdsförslag</div>
+
+    <div className="eva-action-grid">
+      {actionCards.map((card, index) => (
+        <div key={index} className="eva-action-card">
+          <div className="eva-action-kicker">
+            Förslag {index + 1}
+          </div>
+
+          <div className="eva-action-title">
+            {card.title}
+          </div>
+
+          <div className="muted small">
+            <strong>Åtgärd:</strong> {card.action}
+          </div>
+
+          <div className="muted small">
+            <strong>Effekt:</strong> {card.effect}
+          </div>
+
+          <div className="muted small">
+            <strong>Risk:</strong> {card.risk}
+          </div>
+
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() =>
+              ask(`Granska förslag ${index + 1}: ${card.action}`)
+            }
+          >
+            Granska
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
       <div className="chat-thread eva-thread">
         {messages.map((m, idx) => (
           <div key={idx} className={`eva-message-row ${m.role}`}>
