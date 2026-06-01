@@ -21,18 +21,13 @@ function validateEmployees(employees = []) {
   employees.forEach((emp, index) => {
     const errors = [];
 
-    if (!emp.name || !emp.name.trim()) {
-      errors.push("Namn saknas");
-    }
+    if (!emp.name || !emp.name.trim()) errors.push("Namn saknas");
+    if (!departments.includes(emp.department)) errors.push("Ogiltig avdelning");
 
-    if (!departments.includes(emp.department)) {
-      errors.push("Ogiltig avdelning");
-    }
-
-    if (emp.employmentPct == null || Number.isNaN(Number(emp.employmentPct))) {
+    const pct = Number(emp.employmentPct);
+    if (Number.isNaN(pct)) {
       errors.push("Sysselsättningsgrad saknas");
     } else {
-      const pct = Number(emp.employmentPct);
       if (pct <= 0) errors.push("Sysselsättningsgrad måste vara över 0%");
       if (pct > 100) errors.push("Sysselsättningsgrad kan inte överstiga 100%");
       if (pct < 50) errors.push("Sysselsättningsgrad är mycket låg");
@@ -40,10 +35,6 @@ function validateEmployees(employees = []) {
 
     if (emp.eveningOnly && emp.department === "Järn") {
       errors.push("Kväll-only på Järn bör kontrolleras särskilt");
-    }
-
-    if (emp.eveningOnly && Number(emp.employmentPct) === 100) {
-      errors.push("Kväll-only med 100% bör kontrolleras mot arbetstidsregler");
     }
 
     if (errors.length) rowErrors[index] = errors;
@@ -57,7 +48,10 @@ function validateEmployees(employees = []) {
 }
 
 export default function EmployeeGrid({ employees, setEmployees }) {
-  const validation = useMemo(() => validateEmployees(employees), [employees]);
+  const validation = useMemo(
+    () => validateEmployees(employees),
+    [employees]
+  );
 
   function updateEmployee(index, field, value) {
     const updated = [...employees];
@@ -79,19 +73,20 @@ export default function EmployeeGrid({ employees, setEmployees }) {
   }
 
   function removeRow(index) {
-    const updated = employees.filter((_, i) => i !== index);
-    setEmployees(updated);
+    setEmployees(employees.filter((_, i) => i !== index));
   }
 
   return (
     <div className="card">
-      <div className="section-title">Medarbetare (redigerbar)</div>
-      <div className="muted">Redigera direkt i tabellen. Varningar visas direkt när något ser fel ut.</div>
+      <div className="section-title">Medarbetare</div>
+      <div className="muted">
+        Redigera personalstyrkan. Detta styr schemagenereringen, önskemål och bemanningslogiken.
+      </div>
 
       {validation.summary.length > 0 && (
-        <div className="validation-summary top-gap">
+        <div className="top-gap">
           {validation.summary.map((msg, i) => (
-            <div key={i} className="alert-card">
+            <div key={i} className="alert-card warning">
               <span className="dot warning"></span>
               <span>{msg}</span>
             </div>
@@ -99,50 +94,94 @@ export default function EmployeeGrid({ employees, setEmployees }) {
         </div>
       )}
 
-      <div className="grid-table top-gap">
-        <div className="grid-header">
-          <div>Namn</div>
-          <div>Avdelning</div>
-          <div>%</div>
-          <div>Kväll</div>
-          <div></div>
-        </div>
-
+      <div className="employee-card-grid top-gap">
         {employees.map((emp, i) => {
           const rowHasErrors = !!validation.rowErrors[i];
+
           return (
-            <div key={emp.id || i} className={`grid-row-wrap ${rowHasErrors ? "has-errors" : ""}`}>
-              <div className="grid-row">
-                <input
-                  value={emp.name || ""}
-                  onChange={(e) => updateEmployee(i, "name", e.target.value)}
-                  placeholder="Namn"
-                />
+            <div
+              key={emp.id || i}
+              className={`employee-edit-card ${rowHasErrors ? "has-errors" : ""}`}
+            >
+              <div className="employee-edit-header">
+                <div>
+                  <div className="employee-edit-name">
+                    {emp.name || "Ny medarbetare"}
+                  </div>
+                  <div className="muted small">
+                    {emp.department || "Ej vald"} · {emp.employmentPct ?? 100}%
+                    {emp.eveningOnly ? " · kväll endast" : ""}
+                  </div>
+                </div>
 
-                <select
-                  value={emp.department || "Kassa"}
-                  onChange={(e) => updateEmployee(i, "department", e.target.value)}
+                <button
+                  type="button"
+                  className="grid-delete-btn"
+                  onClick={() => removeRow(i)}
+                  aria-label="Ta bort medarbetare"
                 >
-                  {departments.map((d) => (
-                    <option key={d}>{d}</option>
-                  ))}
-                </select>
+                  ×
+                </button>
+              </div>
 
-                <input
-                  type="number"
-                  value={emp.employmentPct ?? 100}
-                  onChange={(e) => updateEmployee(i, "employmentPct", Number(e.target.value))}
-                />
+              <div className="employee-form-grid">
+                <label>
+                  <span>Namn</span>
+                  <input
+                    className="pref-input"
+                    value={emp.name || ""}
+                    onChange={(e) =>
+                      updateEmployee(i, "name", e.target.value)
+                    }
+                    placeholder="Namn"
+                  />
+                </label>
 
-                <div className="grid-check">
+                <label>
+                  <span>Avdelning</span>
+                  <select
+                    className="pref-input"
+                    value={emp.department || "Kassa"}
+                    onChange={(e) =>
+                      updateEmployee(i, "department", e.target.value)
+                    }
+                  >
+                    {departments.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  <span>Sysselsättning %</span>
+                  <input
+                    className="pref-input"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={emp.employmentPct ?? 100}
+                    onChange={(e) =>
+                      updateEmployee(
+                        i,
+                        "employmentPct",
+                        Number(e.target.value)
+                      )
+                    }
+                  />
+                </label>
+
+                <label className="toggle-row">
                   <input
                     type="checkbox"
                     checked={!!emp.eveningOnly}
-                    onChange={(e) => updateEmployee(i, "eveningOnly", e.target.checked)}
+                    onChange={(e) =>
+                      updateEmployee(i, "eveningOnly", e.target.checked)
+                    }
                   />
-                </div>
-
-                <button className="grid-delete-btn" onClick={() => removeRow(i)}>✕</button>
+                  <span>Kväll endast</span>
+                </label>
               </div>
 
               {validation.rowErrors[i] && (
@@ -161,11 +200,18 @@ export default function EmployeeGrid({ employees, setEmployees }) {
       </div>
 
       <div className="top-gap employee-grid-actions">
-        <button className="btn primary" onClick={addRow}>+ Lägg till medarbetare</button>
+        <button className="btn primary" type="button" onClick={addRow}>
+          + Lägg till medarbetare
+        </button>
+
         {validation.hasErrors ? (
-          <div className="validation-badge warning">Validering kräver åtgärd</div>
+          <div className="validation-badge warning">
+            Validering kräver åtgärd
+          </div>
         ) : (
-          <div className="validation-badge ok">Inga valideringsfel</div>
+          <div className="validation-badge ok">
+            Inga valideringsfel
+          </div>
         )}
       </div>
     </div>
