@@ -417,3 +417,11 @@ button { cursor: pointer; }
   font-size: 17px;
   font-weight: 900;
 }
+.eva-review-panel {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(254,209,65,0.10);
+  border: 1px solid rgba(254,209,65,0.32);
+  box-shadow: 0 20px 42px rgba(0,0,0,0.18);
+}
