@@ -161,9 +161,9 @@ function getShiftColor(code) {
     };
 
     deptCell.font = {
-      color: { argb: 'FFFFFF' },
-      bold: true,
-    };
+  color: { argb: 'FFFFFFFF' },
+  bold: true,
+};
 
     // Passfärger
     row.assignments.forEach((a, idx) => {
