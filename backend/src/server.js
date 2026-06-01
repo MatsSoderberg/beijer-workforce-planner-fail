@@ -190,20 +190,21 @@ function getShiftColor(code) {
   });
 
   // Header styling
-  const header = sheet.getRow(1);
+// Header styling
+const header = sheet.getRow(1);
 
-  header.font = {
-    bold: true,
-    color: { argb: '000000' },
-  };
+header.font = {
+  bold: true,
+  color: { argb: 'FF000000' },
+};
 
-  header.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: {
-      argb: 'FED141',
-    },
-  };
+header.fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: {
+    argb: 'FFFED141',
+  },
+};
 
   // Freeze top row
   sheet.views = [
