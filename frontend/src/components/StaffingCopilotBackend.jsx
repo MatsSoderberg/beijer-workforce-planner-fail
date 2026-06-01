@@ -317,6 +317,14 @@ export default function StaffingCopilotBackend({ generated, preferences }) {
 
     setTimeout(() => {
       const response = answer(question, generated, preferences);
+      if (
+  normalize(question).includes("förslag") ||
+  normalize(question).includes("förbättra") ||
+  normalize(question).includes("åtgärd") ||
+  normalize(question).includes("ändra")
+) {
+  setActionCards(findActionSuggestions(generated));
+}
       setMessages((prev) => [...prev, { role: "assistant", text: response }]);
       setThinking(false);
     }, 450);
