@@ -232,7 +232,7 @@ header.fill = {
 
   res.setHeader(
     'Content-Disposition',
-    'attachment; filename=beijer_schedule.xlsx'
+    'attachment; filename=beijer_schedule_v2.xlsx'
   );
 
   await workbook.xlsx.write(res);
