@@ -205,7 +205,7 @@ header.font = {
 header.fill = {
   type: 'pattern',
   pattern: 'solid',
-  foregroundColor: {
+  fgColor: {
     argb: 'FFFF0000',
   },
 };
