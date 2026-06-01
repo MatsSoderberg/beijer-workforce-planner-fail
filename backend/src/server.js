@@ -82,12 +82,17 @@ function csvEscape(value) {
 app.get('/api/export/schedule', requireAuth, async (req, res) => {
   const state = await getState();
 
-  const rows =
-    req.user.role === 'personal' && req.user.employeeName
-      ? state.schedule.filter(
-          (row) => row.employeeName === req.user.employeeName
-        )
-      : state.schedule;
+const allRows =
+  state.generatedSchedule?.rows ||
+  state.schedule ||
+  [];
+
+const rows =
+  req.user.role === 'personal' && req.user.employeeName
+    ? allRows.filter(
+        (row) => row.employeeName === req.user.employeeName
+      )
+    : allRows;
 
   const workbook = new ExcelJS.Workbook();
 
