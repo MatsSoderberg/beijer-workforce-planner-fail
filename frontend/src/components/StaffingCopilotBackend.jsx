@@ -108,6 +108,91 @@ function suggestImprovements(generated) {
 
   return `Mina tre bästa förbättringsförslag:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
 }
+function findActionSuggestions(generated) {
+  const rows = getRows(generated);
+  const diagnostics = getDiagnostics(generated);
+  const deviations = diagnostics.deviations || [];
+
+  const suggestions = [];
+
+  const understaffing = deviations.filter(
+    (d) => d.category === "Underbemanning"
+  );
+
+  understaffing.slice(0, 3).forEach((d) => {
+    suggestions.push({
+      title: "Lös underbemanning",
+      action: `Kontrollera ${d.employeeName} och bemanna upp den dagen.`,
+      effect: "Minskar hard conflict och höjer schemakvaliteten.",
+      risk: "Kan bryta ett individuellt önskemål.",
+    });
+  });
+
+  rows.forEach((row) => {
+    const stats = personStats(row);
+
+    if (stats.evenings >= 5) {
+      const evening = row.assignments.find((a) => a.code === "K");
+
+      if (evening) {
+        suggestions.push({
+          title: "Minska kvällsbelastning",
+          action: `Byt ${row.employeeName} ${evening.date} från kväll till dag/ledig om bemanningen tillåter.`,
+          effect: "Jämnar ut kvällspass.",
+          risk: "Kan skapa underbemanning kvällstid.",
+        });
+      }
+    }
+
+    if (stats.weekends >= 3) {
+      const weekend = row.assignments.find((a) => a.code === "H");
+
+      if (weekend) {
+        suggestions.push({
+          title: "Minska helgbelastning",
+          action: `Flytta ${row.employeeName}s helgpass ${weekend.date} till en kollega med färre helger.`,
+          effect: "Jämnar ut helgfördelningen.",
+          risk: "Kontrollera avdelningskompetens innan byte.",
+        });
+      }
+    }
+
+    const conflicted = row.assignments.find(
+      (a) =>
+        a.preferenceReasons?.some((r) =>
+          String(r).toLowerCase().includes("bryter")
+        )
+    );
+
+    if (conflicted) {
+      suggestions.push({
+        title: "Åtgärda brutet önskemål",
+        action: `Granska ${row.employeeName} ${conflicted.date}. Passet bryter mot ett önskemål.`,
+        effect: "Kan minska brutna önskemål.",
+        risk: "Säkerställ att bemanningskravet fortfarande uppfylls.",
+      });
+    }
+  });
+
+  return suggestions.slice(0, 6);
+}
+
+function formatActionSuggestions(generated) {
+  const suggestions = findActionSuggestions(generated);
+
+  if (!suggestions.length) {
+    return "Jag hittar inga tydliga åtgärder just nu. Schemat ser relativt balanserat ut.";
+  }
+
+  return [
+    "Här är mina bästa åtgärdsförslag:",
+    "",
+    ...suggestions.map(
+      (s, i) =>
+        `${i + 1}. ${s.title}\nÅtgärd: ${s.action}\nEffekt: ${s.effect}\nRisk: ${s.risk}`
+    ),
+  ].join("\n\n");
+}
 
 function answer(question, generated, preferences) {
   const q = normalize(question);
