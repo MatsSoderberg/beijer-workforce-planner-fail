@@ -223,7 +223,7 @@ export default function StaffingCopilotBackend({ generated, preferences }) {
         </div>
 
         <div>
-          <div className="section-title">Fråga Eva</div>
+         <div className="section-title">Fråga Eva ✨</div>
           <div className="muted">
             Din bemanningsanalytiker för schema, konflikter och förbättringar.
           </div>
