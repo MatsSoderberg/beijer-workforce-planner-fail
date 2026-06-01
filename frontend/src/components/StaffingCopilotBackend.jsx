@@ -8,6 +8,7 @@ const starterQuestions = [
   "Vem jobbar flest helger?",
   "Eva, föreslå 3 förbättringar",
   "Finns underbemanning?",
+  "Eva, föreslå konkreta åtgärder",
 ];
 
 function normalize(str = "") {
