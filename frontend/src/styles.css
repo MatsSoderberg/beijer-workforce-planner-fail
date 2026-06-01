@@ -425,3 +425,6 @@ button { cursor: pointer; }
   border: 1px solid rgba(254,209,65,0.32);
   box-shadow: 0 20px 42px rgba(0,0,0,0.18);
 }
+.eva-action-card .btn {
+  margin-top: 8px;
+}
