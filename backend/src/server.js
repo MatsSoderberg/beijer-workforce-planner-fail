@@ -81,14 +81,165 @@ function csvEscape(value) {
 
 app.get('/api/export/schedule', requireAuth, async (req, res) => {
   const state = await getState();
-  const rows = req.user.role === 'personal' && req.user.employeeName
-    ? state.schedule.filter((row) => row.employeeName === req.user.employeeName)
-    : state.schedule;
-  const header = ['date', 'day', 'week', 'dept', 'shiftCode', 'shiftName', 'start', 'end', 'employeeName'];
-  const csvRows = rows.map((row) => header.map((h) => csvEscape(row[h])).join(','));
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="schedule.csv"');
-  res.send([header.join(','), ...csvRows].join('\n'));
+
+  const rows =
+    req.user.role === 'personal' && req.user.employeeName
+      ? state.schedule.filter(
+          (row) => row.employeeName === req.user.employeeName
+        )
+      : state.schedule;
+
+  const workbook = new ExcelJS.Workbook();
+
+  workbook.creator = 'Beijer Workforce Planner';
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet('Schema');
+
+  const dates = rows[0]?.assignments?.map((a) => a.date) || [];
+
+  sheet.columns = [
+    { header: 'Medarbetare', key: 'employee', width: 20 },
+    { header: 'Avdelning', key: 'department', width: 14 },
+    ...dates.map((d) => ({
+      header: d,
+      key: d,
+      width: 14,
+    })),
+    { header: 'Timmar', key: 'hours', width: 10 },
+  ];
+
+  function getDepartmentColor(dept = '') {
+    const d = dept.toLowerCase();
+
+    if (d.includes('kassa')) return '6D5BA8';
+    if (d.includes('färg')) return '2E8B57';
+    if (d.includes('järn')) return 'C98A2E';
+    if (d.includes('lager')) return '4682B4';
+
+    return '666666';
+  }
+
+  function getShiftColor(code) {
+    switch (code) {
+      case 'T':
+        return 'B8A63B';
+      case 'M':
+        return '3F78B4';
+      case 'D':
+        return '3F9B58';
+      case 'N':
+        return '6F4BB8';
+      case 'K':
+        return 'A54B4B';
+      case 'H':
+        return 'D97E2F';
+      case 'L':
+        return '888888';
+      default:
+        return '444444';
+    }
+  }
+
+  rows.forEach((row) => {
+    const excelRow = {
+      employee: row.employeeName,
+      department: row.department,
+      hours: row.totals?.hours || 0,
+    };
+
+    row.assignments.forEach((a) => {
+      excelRow[a.date] =
+        a.code === 'L'
+          ? 'Ledig'
+          : `${a.start || ''}-${a.end || ''}`;
+    });
+
+    const addedRow = sheet.addRow(excelRow);
+
+    // Avdelningsfärg
+    const deptCell = addedRow.getCell(2);
+
+    deptCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: {
+        argb: getDepartmentColor(row.department),
+      },
+    };
+
+    deptCell.font = {
+      color: { argb: 'FFFFFF' },
+      bold: true,
+    };
+
+    // Passfärger
+    row.assignments.forEach((a, idx) => {
+      const cell = addedRow.getCell(idx + 3);
+
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: {
+          argb: getShiftColor(a.code),
+        },
+      };
+
+      cell.font = {
+        color: { argb: 'FFFFFF' },
+        bold: true,
+      };
+
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+    });
+  });
+
+  // Header styling
+  const header = sheet.getRow(1);
+
+  header.font = {
+    bold: true,
+    color: { argb: '000000' },
+  };
+
+  header.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: {
+      argb: 'FED141',
+    },
+  };
+
+  // Freeze top row
+  sheet.views = [
+    {
+      state: 'frozen',
+      ySplit: 1,
+      xSplit: 2,
+    },
+  ];
+
+  // Filter
+  sheet.autoFilter = {
+    from: 'A1',
+    to: sheet.getRow(1).lastCell.address,
+  };
+
+  res.setHeader(
+    'Content-Type',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
+
+  res.setHeader(
+    'Content-Disposition',
+    'attachment; filename=beijer_schedule.xlsx'
+  );
+
+  await workbook.xlsx.write(res);
+  res.end();
 });
 
 app.get('/api/export/summary', requireAuth, requireChef, async (_req, res) => {
