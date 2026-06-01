@@ -157,14 +157,13 @@ function getShiftColor(code) {
     // Avdelningsfärg
     const deptCell = addedRow.getCell(2);
 
-    deptCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: {
-        argb: getDepartmentColor(row.department),
-      },
-    };
-
+   deptCell.fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  foregroundColor: {
+    argb: getDepartmentColor(row.department),
+  },
+};
     deptCell.font = {
   color: { argb: 'FFFFFFFF' },
   bold: true,
@@ -174,13 +173,13 @@ function getShiftColor(code) {
     row.assignments.forEach((a, idx) => {
       const cell = addedRow.getCell(idx + 3);
 
-      cell.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: {
-          argb: getShiftColor(a.code),
-        },
-      };
+    cell.fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  foregroundColor: {
+    argb: getShiftColor(a.code),
+  },
+};
 
      cell.font = {
   color: { argb: 'FFFFFFFF' },
@@ -206,8 +205,8 @@ header.font = {
 header.fill = {
   type: 'pattern',
   pattern: 'solid',
-  fgColor: {
-    argb: 'FFFED141',
+  foregroundColor: {
+    argb: 'FFFF0000',
   },
 };
 
