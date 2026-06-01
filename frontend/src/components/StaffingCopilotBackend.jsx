@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import evaAvatar from "../assets/Eva.png";
 
 const starterQuestions = [
-  "Förklara schemakvaliteten",
+  "Eva, förklara schemakvaliteten",
   "Vilka är största konflikterna?",
   "Vem jobbar flest kvällar?",
   "Vem jobbar flest helger?",
@@ -24,6 +24,7 @@ function getDiagnostics(generated) {
 
 function personStats(row) {
   const assignments = row.assignments || [];
+
   return {
     name: row.employeeName,
     department: row.department,
@@ -44,7 +45,8 @@ function topBy(rows, field, count = 5) {
 }
 
 function formatList(items, field, unit = "") {
-  if (!items.length) return "Ingen data hittades.";
+  if (!items.length) return "Jag hittar ingen data för det ännu.";
+
   return items
     .map((x, i) => `${i + 1}. ${x.name} (${x.department}) – ${x[field]}${unit}`)
     .join("\n");
@@ -56,16 +58,14 @@ function explainQuality(generated) {
   const deviations = diagnostics.deviations || [];
 
   return [
-    `Schemakvaliteten är ${diagnostics.qualityScore ?? "-"} av 100.`,
-    `Konflikter: ${summary.preferenceConflicts ?? 0}.`,
-    `Brutna önskemål: ${summary.brokenPreferences ?? 0}.`,
-    `Underbemanningar: ${summary.understaffedDays ?? 0}.`,
-    `Kvällspass totalt: ${summary.totalEvenings ?? 0}.`,
-    `Helgpass totalt: ${summary.totalWeekends ?? 0}.`,
+    `Jag ser att schemakvaliteten är ${diagnostics.qualityScore ?? "-"} av 100.`,
+    `Det finns ${summary.preferenceConflicts ?? 0} konfliktindikatorer och ${summary.brokenPreferences ?? 0} brutna önskemål.`,
+    `Jag hittar ${summary.understaffedDays ?? 0} underbemanningssignaler.`,
+    `Totalt finns ${summary.totalEvenings ?? 0} kvällspass och ${summary.totalWeekends ?? 0} helgpass i perioden.`,
     "",
     deviations.length
-      ? `Största orsakerna:\n${deviations.slice(0, 5).map((d, i) => `${i + 1}. ${d.message}`).join("\n")}`
-      : "Inga tydliga avvikelser hittades.",
+      ? `Det som påverkar mest just nu är:\n${deviations.slice(0, 5).map((d, i) => `${i + 1}. ${d.message}`).join("\n")}`
+      : "Jag hittar inga större avvikelser just nu.",
   ].join("\n");
 }
 
@@ -81,32 +81,32 @@ function suggestImprovements(generated) {
   const suggestions = [];
 
   if (deviations.some((d) => d.category === "Underbemanning")) {
-    suggestions.push("Prioritera att lösa underbemanning före individuella önskemål.");
+    suggestions.push("Börja med underbemanningen. Den ska gå före individuella önskemål.");
   }
 
   if (eveningTop[0]?.evenings > eveningTop[2]?.evenings + 2) {
     suggestions.push(
-      `Jämna ut kvällspass: ${eveningTop[0].name} har flest kvällar (${eveningTop[0].evenings}).`
+      `Jämna ut kvällspassen. ${eveningTop[0].name} har flest kvällar (${eveningTop[0].evenings}).`
     );
   }
 
   if (weekendTop[0]?.weekends > weekendTop[2]?.weekends + 1) {
     suggestions.push(
-      `Jämna ut helgpass: ${weekendTop[0].name} har flest helger (${weekendTop[0].weekends}).`
+      `Jämna ut helgpass. ${weekendTop[0].name} har flest helger (${weekendTop[0].weekends}).`
     );
   }
 
   if (conflictTop[0]?.conflicts > 0) {
     suggestions.push(
-      `Börja med ${conflictTop[0].name}: flest celler med konfliktindikator (${conflictTop[0].conflicts}).`
+      `Titta först på ${conflictTop[0].name}. Där finns flest konfliktindikatorer (${conflictTop[0].conflicts}).`
     );
   }
 
   if (!suggestions.length) {
-    suggestions.push("Schemat ser relativt balanserat ut. Nästa steg är att kontrollera bemanning per avdelning och dag.");
+    suggestions.push("Schemat ser relativt balanserat ut. Nästa förbättring är att kontrollera bemanning per avdelning och dag.");
   }
 
-  return `Förslag på förbättringar:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
+  return `Mina tre bästa förbättringsförslag:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join("\n")}`;
 }
 
 function answer(question, generated, preferences) {
@@ -115,7 +115,7 @@ function answer(question, generated, preferences) {
   const diagnostics = getDiagnostics(generated);
 
   if (!generated) {
-    return "Jag hittar inget genererat schema ännu. Generera ett schema först.";
+    return "Jag hittar inget genererat schema ännu. Generera ett schema först så hjälper jag dig att analysera det.";
   }
 
   if (q.includes("kvalitet") || q.includes("score") || q.includes("poäng")) {
@@ -124,22 +124,27 @@ function answer(question, generated, preferences) {
 
   if (q.includes("konflikt") || q.includes("avvik")) {
     const deviations = diagnostics.deviations || [];
-    if (!deviations.length) return "Jag hittar inga konflikter eller avvikelser.";
-    return `Största konflikterna:\n${deviations.slice(0, 8).map((d, i) => `${i + 1}. ${d.category || d.severity}: ${d.message}`).join("\n")}`;
+    if (!deviations.length) return "Jag hittar inga konflikter eller avvikelser just nu.";
+
+    return `De största konflikterna jag ser är:\n${deviations
+      .slice(0, 8)
+      .map((d, i) => `${i + 1}. ${d.category || d.severity}: ${d.message}`)
+      .join("\n")}`;
   }
 
   if (q.includes("kväll")) {
-    return `Flest kvällspass:\n${formatList(topBy(rows, "evenings"), "evenings", " kvällspass")}`;
+    return `De som jobbar flest kvällar är:\n${formatList(topBy(rows, "evenings"), "evenings", " kvällspass")}`;
   }
 
   if (q.includes("helg")) {
-    return `Flest helgpass:\n${formatList(topBy(rows, "weekends"), "weekends", " helgpass")}`;
+    return `De som jobbar flest helger är:\n${formatList(topBy(rows, "weekends"), "weekends", " helgpass")}`;
   }
 
   if (q.includes("underbemanning") || q.includes("bemanning")) {
     const under = (diagnostics.deviations || []).filter((d) => d.category === "Underbemanning");
     if (!under.length) return "Jag hittar ingen underbemanning i diagnosen.";
-    return `Underbemanning:\n${under.map((d, i) => `${i + 1}. ${d.message}`).join("\n")}`;
+
+    return `Underbemanning jag hittar:\n${under.map((d, i) => `${i + 1}. ${d.message}`).join("\n")}`;
   }
 
   if (q.includes("förbättra") || q.includes("föreslå") || q.includes("förslag")) {
@@ -154,8 +159,9 @@ function answer(question, generated, preferences) {
   if (person) {
     const stats = personStats(person);
     const pref = preferences?.[person.employeeId] || {};
+
     return [
-      `${person.employeeName} (${person.department})`,
+      `Jag tittar på ${person.employeeName} (${person.department}).`,
       `Timmar: ${stats.hours}`,
       `Kvällspass: ${stats.evenings}`,
       `Helgpass: ${stats.weekends}`,
@@ -166,18 +172,19 @@ function answer(question, generated, preferences) {
     ].filter(Boolean).join("\n");
   }
 
-  return "Jag kan analysera schemakvalitet, konflikter, helger, kvällar, underbemanning och ge förbättringsförslag.";
+  return "Jag kan hjälpa dig med schemakvalitet, konflikter, helger, kvällar, underbemanning och förbättringsförslag.";
 }
 
 export default function StaffingCopilotBackend({ generated, preferences }) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Hej! Jag analyserar schemat, konflikter, helger, kvällar och bemanning. Testa gärna en snabbfråga.",
+      text: "Hej, det är Eva. Jag kan hjälpa dig analysera schemat, hitta konflikter och föreslå förbättringar.",
     },
   ]);
 
   const [input, setInput] = useState("");
+  const [thinking, setThinking] = useState(false);
 
   const contextSummary = useMemo(() => {
     const diagnostics = generated?.diagnostics || {};
@@ -191,15 +198,15 @@ export default function StaffingCopilotBackend({ generated, preferences }) {
   function ask(question) {
     if (!question.trim()) return;
 
-    const response = answer(question, generated, preferences);
-
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: question },
-      { role: "assistant", text: response },
-    ]);
-
+    setMessages((prev) => [...prev, { role: "user", text: question }]);
     setInput("");
+    setThinking(true);
+
+    setTimeout(() => {
+      const response = answer(question, generated, preferences);
+      setMessages((prev) => [...prev, { role: "assistant", text: response }]);
+      setThinking(false);
+    }, 450);
   }
 
   function handleSubmit(e) {
@@ -208,19 +215,26 @@ export default function StaffingCopilotBackend({ generated, preferences }) {
   }
 
   return (
-    <div className="card staffing-chat-card">
-      <div className="section-title">Bemanningscopilot v2</div>
-      <div className="muted">
-        Läser schema, diagnos, konflikter och önskemål direkt från appen.
-      </div>
+    <div className="card eva-copilot-card">
+      <div className="eva-header">
+        <div className="eva-avatar-wrap">
+          <img src={evaAvatar} alt="Eva" className="eva-avatar" />
+          <span className="eva-live-dot"></span>
+        </div>
 
-      <div className="top-gap">
-        <div className="save-pill">
-          Kvalitet: {contextSummary.quality ?? "-"} · Konflikter: {contextSummary.conflicts ?? "-"} · Medarbetare: {contextSummary.rows}
+        <div>
+          <div className="section-title">Fråga Eva</div>
+          <div className="muted">
+            Din bemanningsanalytiker för schema, konflikter och förbättringar.
+          </div>
+
+          <div className="eva-status-pill">
+            Kvalitet: {contextSummary.quality ?? "-"} · Konflikter: {contextSummary.conflicts ?? "-"} · Medarbetare: {contextSummary.rows}
+          </div>
         </div>
       </div>
 
-      <div className="chat-suggestions">
+      <div className="chat-suggestions eva-suggestions">
         {starterQuestions.map((q) => (
           <button key={q} className="chat-chip" onClick={() => ask(q)}>
             {q}
@@ -228,28 +242,43 @@ export default function StaffingCopilotBackend({ generated, preferences }) {
         ))}
       </div>
 
-      <div className="chat-thread">
+      <div className="chat-thread eva-thread">
         {messages.map((m, idx) => (
-          <div key={idx} className={`chat-bubble ${m.role}`}>
-            {m.text.split("\n").map((line, i) => (
-              <React.Fragment key={i}>
-                {line}
-                <br />
-              </React.Fragment>
-            ))}
+          <div key={idx} className={`eva-message-row ${m.role}`}>
+            {m.role === "assistant" && (
+              <img src={evaAvatar} alt="Eva" className="eva-mini-avatar" />
+            )}
+
+            <div className={`chat-bubble eva-bubble ${m.role}`}>
+              {m.text.split("\n").map((line, i) => (
+                <React.Fragment key={i}>
+                  {line}
+                  <br />
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         ))}
+
+        {thinking && (
+          <div className="eva-message-row assistant">
+            <img src={evaAvatar} alt="Eva" className="eva-mini-avatar" />
+            <div className="chat-bubble eva-bubble assistant">
+              Eva tänker<span className="typing-dots">...</span>
+            </div>
+          </div>
+        )}
       </div>
 
-      <form className="chat-form" onSubmit={handleSubmit}>
+      <form className="chat-form eva-form" onSubmit={handleSubmit}>
         <input
           className="pref-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Fråga t.ex. varför kvaliteten är låg..."
+          placeholder="Fråga Eva om schemat..."
         />
         <button className="btn primary" type="submit">
-          Fråga
+          Fråga Eva
         </button>
       </form>
     </div>
