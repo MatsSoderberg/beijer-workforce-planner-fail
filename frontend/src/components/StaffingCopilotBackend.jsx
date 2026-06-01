@@ -551,6 +551,13 @@ const [reviewedAction, setReviewedAction] = useState(null);
           >
             Granska
           </button>
+          <button
+  type="button"
+  className="btn primary"
+  onClick={() => applySuggestion(card)}
+>
+  Applicera
+</button>
         </div>
       ))}
     </div>
