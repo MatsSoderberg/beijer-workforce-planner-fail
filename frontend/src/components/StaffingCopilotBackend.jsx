@@ -209,7 +209,10 @@ function answer(question, generated, preferences) {
 
   if (q.includes("konflikt") || q.includes("avvik")) {
     const deviations = diagnostics.deviations || [];
-    if (!deviations.length) return "Jag hittar inga konflikter eller avvikelser just nu.";
+
+    if (!deviations.length) {
+      return "Jag hittar inga konflikter eller avvikelser just nu.";
+    }
 
     return `De största konflikterna jag ser är:\n${deviations
       .slice(0, 8)
@@ -218,35 +221,50 @@ function answer(question, generated, preferences) {
   }
 
   if (q.includes("kväll")) {
-    return `De som jobbar flest kvällar är:\n${formatList(topBy(rows, "evenings"), "evenings", " kvällspass")}`;
+    return `De som jobbar flest kvällar är:\n${formatList(
+      topBy(rows, "evenings"),
+      "evenings",
+      " kvällspass"
+    )}`;
   }
 
   if (q.includes("helg")) {
-    return `De som jobbar flest helger är:\n${formatList(topBy(rows, "weekends"), "weekends", " helgpass")}`;
+    return `De som jobbar flest helger är:\n${formatList(
+      topBy(rows, "weekends"),
+      "weekends",
+      " helgpass"
+    )}`;
   }
 
   if (q.includes("underbemanning") || q.includes("bemanning")) {
-    const under = (diagnostics.deviations || []).filter((d) => d.category === "Underbemanning");
-    if (!under.length) return "Jag hittar ingen underbemanning i diagnosen.";
+    const under = (diagnostics.deviations || []).filter(
+      (d) => d.category === "Underbemanning"
+    );
 
-    return `Underbemanning jag hittar:\n${under.map((d, i) => `${i + 1}. ${d.message}`).join("\n")}`;
+    if (!under.length) {
+      return "Jag hittar ingen underbemanning i diagnosen.";
+    }
+
+    return `Underbemanning jag hittar:\n${under
+      .map((d, i) => `${i + 1}. ${d.message}`)
+      .join("\n")}`;
   }
 
- if (
-  q.includes("förbättra") ||
-  q.includes("föreslå") ||
-  q.includes("förslag") ||
-  q.includes("åtgärd") ||
-  q.includes("ändra")
-) {
-  return formatActionSuggestions(generated);
-}
-    return suggestImprovements(generated);
+  if (
+    q.includes("förbättra") ||
+    q.includes("föreslå") ||
+    q.includes("förslag") ||
+    q.includes("åtgärd") ||
+    q.includes("ändra")
+  ) {
+    return formatActionSuggestions(generated);
   }
 
   const person = rows.find((r) =>
     q.includes(normalize(r.employeeName)) ||
-    normalize(r.employeeName).split(" ").some((part) => q.includes(part))
+    normalize(r.employeeName)
+      .split(" ")
+      .some((part) => q.includes(part))
   );
 
   if (person) {
@@ -262,12 +280,13 @@ function answer(question, generated, preferences) {
       `Manuella ändringar: ${stats.manual}`,
       `Konfliktindikatorer: ${stats.conflicts}`,
       pref.notes ? `Notering: ${pref.notes}` : null,
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   return "Jag kan hjälpa dig med schemakvalitet, konflikter, helger, kvällar, underbemanning och förbättringsförslag.";
 }
-
 export default function StaffingCopilotBackend({ generated, preferences }) {
   const [messages, setMessages] = useState([
     {
