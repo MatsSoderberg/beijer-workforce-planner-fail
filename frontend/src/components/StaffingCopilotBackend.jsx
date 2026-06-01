@@ -371,7 +371,7 @@ export default function StaffingCopilotBackend({ generated, preferences }) {
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const [actionCards, setActionCards] = useState([]);
-
+const [reviewedAction, setReviewedAction] = useState(null);
   const contextSummary = useMemo(() => {
     const diagnostics = generated?.diagnostics || {};
     return {
