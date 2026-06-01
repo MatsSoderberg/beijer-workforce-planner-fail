@@ -486,6 +486,15 @@ const [reviewedAction, setReviewedAction] = useState(null);
     </div>
   </div>
 )}
+      {reviewedAction && (
+  <div className="eva-review-panel">
+    <div className="eva-action-kicker">Konsekvensanalys</div>
+    <div className="eva-action-title">{reviewedAction.title}</div>
+    <div className="muted small" style={{ whiteSpace: "pre-wrap" }}>
+      {reviewedAction.review}
+    </div>
+  </div>
+)}
       <div className="chat-thread eva-thread">
         {messages.map((m, idx) => (
           <div key={idx} className={`eva-message-row ${m.role}`}>
