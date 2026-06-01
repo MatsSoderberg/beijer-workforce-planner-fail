@@ -7,7 +7,7 @@ import { getState, updateSection, addEmployee, addTimeOff, saveSchedule, publish
 import { generateSchedule, scheduleSummary } from './scheduler.js';
 import { getDb, resetDatabase } from './db.js';
 import { initDb, pool } from "./db.js";
-
+import ExcelJS from 'exceljs';
 await getDb();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
