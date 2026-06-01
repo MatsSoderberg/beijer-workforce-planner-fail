@@ -358,6 +358,72 @@ function answer(question, generated, preferences) {
       .join("\n");
   }
 
+function applySuggestion(card) {
+  if (!generated || !setGenerated) return;
+
+  const updated = structuredClone(generated);
+  let changed = false;
+
+  updated.rows.forEach((row) => {
+    const stats = personStats(row);
+
+    // minska kvällsbelastning
+    if (
+      card.title.toLowerCase().includes("kväll") &&
+      stats.evenings >= 5
+    ) {
+      const eveningShift = row.assignments.find(
+        (a) => a.code === "K"
+      );
+
+      if (eveningShift && !changed) {
+        eveningShift.code = "D";
+        eveningShift.label = "Dag";
+        eveningShift.start = "08:00";
+        eveningShift.end = "17:00";
+        eveningShift.hours = 8;
+        eveningShift.manuallyEdited = true;
+
+        changed = true;
+      }
+    }
+
+    // minska helgbelastning
+    if (
+      card.title.toLowerCase().includes("helg") &&
+      stats.weekends >= 3
+    ) {
+      const weekendShift = row.assignments.find(
+        (a) => a.code === "H"
+      );
+
+      if (weekendShift && !changed) {
+        weekendShift.code = "L";
+        weekendShift.label = "Ledig";
+        weekendShift.hours = 0;
+        weekendShift.start = "";
+        weekendShift.end = "";
+        weekendShift.manuallyEdited = true;
+
+        changed = true;
+      }
+    }
+  });
+
+  setGenerated(updated);
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "assistant",
+      text:
+        changed
+          ? `Jag har applicerat förslaget "${card.title}". Kontrollera veckovyn och kör gärna ny analys.`
+          : "Jag kunde inte applicera förändringen automatiskt ännu.",
+    },
+  ]);
+}
+  
   return "Jag kan hjälpa dig med schemakvalitet, konflikter, helger, kvällar, underbemanning och förbättringsförslag.";
 }
 export default function StaffingCopilotBackend({
