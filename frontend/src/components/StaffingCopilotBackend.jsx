@@ -194,6 +194,79 @@ function formatActionSuggestions(generated) {
   ].join("\n\n");
 }
 
+function estimateSuggestionImpact(card, generated) {
+  const diagnostics = getDiagnostics(generated);
+  const summary = diagnostics.summary || {};
+  const currentScore = diagnostics.qualityScore ?? 70;
+
+  let scoreLift = 2;
+  let conflictLift = 0;
+  let riskLevel = "Låg";
+
+  const title = normalize(card.title);
+  const action = normalize(card.action);
+
+  if (title.includes("underbemanning") || action.includes("bemanna")) {
+    scoreLift = 8;
+    conflictLift = 1;
+    riskLevel = "Medel";
+  }
+
+  if (title.includes("kväll")) {
+    scoreLift = 5;
+    conflictLift = 1;
+    riskLevel = "Låg";
+  }
+
+  if (title.includes("helg")) {
+    scoreLift = 6;
+    conflictLift = 1;
+    riskLevel = "Medel";
+  }
+
+  if (title.includes("önskemål")) {
+    scoreLift = 4;
+    conflictLift = 1;
+    riskLevel = "Låg";
+  }
+
+  const newScore = Math.min(100, currentScore + scoreLift);
+  const newConflicts = Math.max(
+    0,
+    (summary.preferenceConflicts ?? 0) - conflictLift
+  );
+
+  return {
+    currentScore,
+    newScore,
+    currentConflicts: summary.preferenceConflicts ?? 0,
+    newConflicts,
+    currentBroken: summary.brokenPreferences ?? 0,
+    newBroken: Math.max(0, (summary.brokenPreferences ?? 0) - conflictLift),
+    riskLevel,
+  };
+}
+
+function formatSuggestionReview(card, generated) {
+  const impact = estimateSuggestionImpact(card, generated);
+
+  return [
+    `Jag har granskat förslaget: ${card.title}`,
+    "",
+    `Föreslagen åtgärd: ${card.action}`,
+    "",
+    `Beräknad effekt:`,
+    `• Schemakvalitet: ${impact.currentScore} → ${impact.newScore}`,
+    `• Konflikter: ${impact.currentConflicts} → ${impact.newConflicts}`,
+    `• Brutna önskemål: ${impact.currentBroken} → ${impact.newBroken}`,
+    "",
+    `Risknivå: ${impact.riskLevel}`,
+    `Risk: ${card.risk}`,
+    "",
+    "Min rekommendation: granska bemanningen i samma avdelning och vecka innan du applicerar ändringen.",
+  ].join("\n");
+}
+
 function answer(question, generated, preferences) {
   const q = normalize(question);
   const rows = getRows(generated);
