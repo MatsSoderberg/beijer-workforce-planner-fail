@@ -506,6 +506,8 @@ export function generateScheduleFallback(payload = {}) {
     payload.preferences || []
   );
 
+  rows = enforceWeekendStaffing(rows, payload.staffing || {});
+  
   const diagnostics = buildFallbackDiagnostics(
   rows,
   payload.preferences || [],
