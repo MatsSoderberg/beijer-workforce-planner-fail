@@ -430,7 +430,7 @@ export default function StaffingCopilotBackend({
   generated,
   preferences,
   setGenerated
-})
+}) {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
