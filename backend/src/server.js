@@ -109,37 +109,29 @@ app.get('/api/export/schedule', requireAuth, async (req, res) => {
     { header: 'Timmar', key: 'hours', width: 10 },
   ];
 
-  function getDepartmentColor(dept = '') {
-    const d = dept.toLowerCase();
+ function getDepartmentColor(dept = '') {
+  const d = dept.toLowerCase();
 
-    if (d.includes('kassa')) return '6D5BA8';
-    if (d.includes('färg')) return '2E8B57';
-    if (d.includes('järn')) return 'C98A2E';
-    if (d.includes('lager')) return '4682B4';
+  if (d.includes('kassa')) return 'FF6D5BA8';
+  if (d.includes('färg')) return 'FF2E8B57';
+  if (d.includes('järn')) return 'FFC98A2E';
+  if (d.includes('lager')) return 'FF4682B4';
 
-    return '666666';
+  return 'FF666666';
+}
+
+function getShiftColor(code) {
+  switch (code) {
+    case 'T': return 'FFB8A63B';
+    case 'M': return 'FF3F78B4';
+    case 'D': return 'FF3F9B58';
+    case 'N': return 'FF6F4BB8';
+    case 'K': return 'FFA54B4B';
+    case 'H': return 'FFD97E2F';
+    case 'L': return 'FF888888';
+    default: return 'FF444444';
   }
-
-  function getShiftColor(code) {
-    switch (code) {
-      case 'T':
-        return 'B8A63B';
-      case 'M':
-        return '3F78B4';
-      case 'D':
-        return '3F9B58';
-      case 'N':
-        return '6F4BB8';
-      case 'K':
-        return 'A54B4B';
-      case 'H':
-        return 'D97E2F';
-      case 'L':
-        return '888888';
-      default:
-        return '444444';
-    }
-  }
+}
 
   rows.forEach((row) => {
     const excelRow = {
