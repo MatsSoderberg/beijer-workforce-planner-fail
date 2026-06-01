@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import evaAvatar from "../assets/Eva.png";
 
 const starterQuestions = [
   "Förklara schemakvaliteten",
