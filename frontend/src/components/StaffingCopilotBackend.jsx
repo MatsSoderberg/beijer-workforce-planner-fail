@@ -360,7 +360,11 @@ function answer(question, generated, preferences) {
 
   return "Jag kan hjälpa dig med schemakvalitet, konflikter, helger, kvällar, underbemanning och förbättringsförslag.";
 }
-export default function StaffingCopilotBackend({ generated, preferences }) {
+export default function StaffingCopilotBackend({
+  generated,
+  preferences,
+  setGenerated
+})
   const [messages, setMessages] = useState([
     {
       role: "assistant",
