@@ -177,10 +177,10 @@ function getShiftColor(code) {
         },
       };
 
-      cell.font = {
-        color: { argb: 'FFFFFF' },
-        bold: true,
-      };
+     cell.font = {
+  color: { argb: 'FFFFFFFF' },
+  bold: true,
+};
 
       cell.alignment = {
         horizontal: 'center',
