@@ -325,3 +325,59 @@ button { cursor: pointer; }
   align-items: center;
   flex-wrap: wrap;
 }
+.eva-avatar-wrap {
+  width: 64px;
+  height: 64px;
+}
+
+.eva-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+
+.eva-mini-avatar {
+  display: none;
+}
+
+.eva-message-row.assistant::before {
+  content: "Eva";
+  font-weight: 800;
+  color: rgba(255,255,255,0.85);
+  margin-right: 10px;
+  min-width: 34px;
+}
+
+.eva-header {
+  border-bottom: 1px solid rgba(254,209,65,0.45);
+  padding-bottom: 18px;
+}
+
+.eva-thread {
+  background: rgba(8,13,20,0.45);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.eva-bubble.assistant {
+  max-width: 62%;
+}
+
+.eva-message-row.user .eva-bubble {
+  margin-left: auto;
+  background: rgba(36, 88, 160, 0.45);
+}
+
+.eva-suggestions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.chat-chip {
+  min-height: 58px;
+  text-align: left;
+  justify-content: flex-start;
+  border-radius: 14px;
+}
