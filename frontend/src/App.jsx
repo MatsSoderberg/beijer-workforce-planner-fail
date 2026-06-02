@@ -275,7 +275,7 @@ function Dashboard({
                                 </option>
                               ))}
                             </select>
-                            {a.locked && (
+                           {a.locked && (
   <div
     style={{
       position: "absolute",
@@ -283,6 +283,8 @@ function Dashboard({
       right: 6,
       fontSize: 14,
       opacity: 0.9,
+      zIndex: 10,
+      pointerEvents: "none",
     }}
   >
     🔒
