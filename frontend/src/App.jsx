@@ -275,6 +275,19 @@ function Dashboard({
                                 </option>
                               ))}
                             </select>
+                            {a.locked && (
+  <div
+    style={{
+      position: "absolute",
+      top: 6,
+      right: 6,
+      fontSize: 14,
+      opacity: 0.9,
+    }}
+  >
+    🔒
+  </div>
+)}
 
                             {a.manuallyEdited && (
                               <div className="save-pill" style={{ marginTop: 6 }}>
