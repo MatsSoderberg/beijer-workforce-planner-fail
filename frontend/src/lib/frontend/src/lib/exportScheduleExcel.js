@@ -101,37 +101,7 @@ function styleHeader(row) {
     };
   });
 }
-function departmentColor(dept = "") {
-  const d = dept.toLowerCase();
 
-  if (d.includes("kassa")) return "FF6D5BA8";
-  if (d.includes("färg")) return "FF2E8B57";
-  if (d.includes("järn")) return "FFC98A2E";
-  if (d.includes("lager")) return "FF4682B4";
-
-  return "FF666666";
-}
-
-function shiftColor(code) {
-  switch (code) {
-    case "T":
-      return "FFB8A63B";
-    case "M":
-      return "FF3F78B4";
-    case "D":
-      return "FF3F9B58";
-    case "N":
-      return "FF6F4BB8";
-    case "K":
-      return "FFA54B4B";
-    case "H":
-      return "FFD97E2F";
-    case "L":
-      return "FF888888";
-    default:
-      return "FF444444";
-  }
-}
 export async function exportScheduleToExcel(generated) {
   if (!generated?.rows?.length) return;
 
