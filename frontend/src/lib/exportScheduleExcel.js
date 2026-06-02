@@ -32,7 +32,37 @@ function codeToText(a) {
   if (a.code === "H") return "Helg";
   return a.code;
 }
+function departmentColor(dept = "") {
+  const d = dept.toLowerCase();
 
+  if (d.includes("kassa")) return "FF6D5BA8";
+  if (d.includes("färg")) return "FF2E8B57";
+  if (d.includes("järn")) return "FFC98A2E";
+  if (d.includes("lager")) return "FF4682B4";
+
+  return "FF666666";
+}
+
+function shiftColor(code) {
+  switch (code) {
+    case "T":
+      return "FFB8A63B";
+    case "M":
+      return "FF3F78B4";
+    case "D":
+      return "FF3F9B58";
+    case "N":
+      return "FF6F4BB8";
+    case "K":
+      return "FFA54B4B";
+    case "H":
+      return "FFD97E2F";
+    case "L":
+      return "FF888888";
+    default:
+      return "FF444444";
+  }
+}
 function groupByWeek(rows) {
   const weeks = {};
 
@@ -71,7 +101,37 @@ function styleHeader(row) {
     };
   });
 }
+function departmentColor(dept = "") {
+  const d = dept.toLowerCase();
 
+  if (d.includes("kassa")) return "FF6D5BA8";
+  if (d.includes("färg")) return "FF2E8B57";
+  if (d.includes("järn")) return "FFC98A2E";
+  if (d.includes("lager")) return "FF4682B4";
+
+  return "FF666666";
+}
+
+function shiftColor(code) {
+  switch (code) {
+    case "T":
+      return "FFB8A63B";
+    case "M":
+      return "FF3F78B4";
+    case "D":
+      return "FF3F9B58";
+    case "N":
+      return "FF6F4BB8";
+    case "K":
+      return "FFA54B4B";
+    case "H":
+      return "FFD97E2F";
+    case "L":
+      return "FF888888";
+    default:
+      return "FF444444";
+  }
+}
 export async function exportScheduleToExcel(generated) {
   if (!generated?.rows?.length) return;
 
@@ -120,27 +180,77 @@ export async function exportScheduleToExcel(generated) {
       { header: "Timmar", width: 10 },
     ];
 
-    generated.rows.forEach((row, rowIndex) => {
-      const excelRow = ws.addRow([
-        row.employeeName,
-        row.department,
-        ...days.map((d) =>
-          codeToText(row.assignments[d.index])
-        ),
-        row.totals?.hours || 0,
-      ]);
+generated.rows.forEach((row) => {
+  const excelRow = ws.addRow([
+    row.employeeName,
+    row.department,
+    ...days.map((d) =>
+      codeToText(row.assignments[d.index])
+    ),
+    row.totals?.hours || 0,
+  ]);
 
-      if (rowIndex % 2 === 0) {
-        excelRow.eachCell((cell) => {
-          cell.fill = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: SOFT_GREY },
-          };
-        });
-      }
-    });
+  excelRow.height = 24;
 
+  excelRow.getCell(1).font = {
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
+
+  excelRow.getCell(1).fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: {
+      argb: departmentColor(row.department),
+    },
+  };
+
+  excelRow.getCell(2).font = {
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
+
+  excelRow.getCell(2).fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: {
+      argb: departmentColor(row.department),
+    },
+  };
+
+  days.forEach((d, idx) => {
+    const assignment = row.assignments[d.index];
+    const cell = excelRow.getCell(idx + 3);
+
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: {
+        argb: shiftColor(assignment?.code),
+      },
+    };
+
+    cell.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle",
+    };
+  });
+
+  const hourCell = excelRow.getCell(days.length + 3);
+
+  hourCell.font = {
+    bold: true,
+  };
+
+  hourCell.alignment = {
+    horizontal: "center",
+  };
+});
     styleHeader(ws.getRow(1));
 
     ws.views = [
