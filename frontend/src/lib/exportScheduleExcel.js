@@ -64,7 +64,7 @@ function shiftColor(code) {
   }
 }
 function formatExcelDate(dateStr) {
-  const date = new Date(dateStr);
+  const date = new Date(`${dateStr}T00:00:00`);
   const days = ["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"];
   return `${days[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`;
 }
@@ -240,8 +240,14 @@ generated.rows.forEach((row) => {
 ];
 
 ws.autoFilter = {
-  from: "A1",
-  to: ws.getRow(1).lastCell.address,
+  from: {
+    row: 1,
+    column: 1,
+  },
+  to: {
+    row: 1,
+    column: days.length + 3,
+  },
 };
 
     ws.pageSetup = {
