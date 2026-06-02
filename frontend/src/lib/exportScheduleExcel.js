@@ -157,7 +157,10 @@ generated.rows.forEach((row) => {
     ...days.map((d) =>
       codeToText(row.assignments[d.index])
     ),
-    row.totals?.hours || 0,
+   days.reduce((sum, d) => {
+  const assignment = row.assignments[d.index];
+  return sum + (assignment?.hours || 0);
+}, 0),
   ]);
 
   excelRow.height = 24;
