@@ -63,6 +63,11 @@ function shiftColor(code) {
       return "FF444444";
   }
 }
+function formatExcelDate(dateStr) {
+  const date = new Date(dateStr);
+  const days = ["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"];
+  return `${days[date.getDay()]} ${date.getDate()}/${date.getMonth() + 1}`;
+}
 function groupByWeek(rows) {
   const weeks = {};
 
@@ -144,9 +149,9 @@ export async function exportScheduleToExcel(generated) {
       { header: "Medarbetare", width: 22 },
       { header: "Avdelning", width: 16 },
       ...days.map((d) => ({
-        header: d.date,
-        width: 14,
-      })),
+  header: formatExcelDate(d.date),
+  width: 14,
+})),
       { header: "Timmar", width: 10 },
     ];
 
@@ -227,11 +232,17 @@ generated.rows.forEach((row) => {
     styleHeader(ws.getRow(1));
 
     ws.views = [
-      {
-        state: "frozen",
-        ySplit: 1,
-      },
-    ];
+  {
+    state: "frozen",
+    ySplit: 1,
+    xSplit: 2,
+  },
+];
+
+ws.autoFilter = {
+  from: "A1",
+  to: ws.getRow(1).lastCell.address,
+};
 
     ws.pageSetup = {
       orientation: "landscape",
