@@ -148,12 +148,12 @@ function Dashboard({
           const shift = shiftFromCode(newCode);
 
           return {
-            ...a,
-            ...shift,
-            manuallyEdited: true,
-            preferenceReasons: ["Manuellt justerad"],
-          };
-        });
+  ...a,
+  ...shift,
+  manuallyEdited: true,
+  locked: true,
+  preferenceReasons: ["Manuellt justerad"],
+};
 
         return {
           ...row,
@@ -169,7 +169,7 @@ function Dashboard({
         manuallyEditedAt: new Date().toISOString(),
       },
     };
-
+setGeneratedSchedule(updated);
     window.dispatchEvent(
       new CustomEvent("beijer:schedule-edited", {
         detail: updated,
