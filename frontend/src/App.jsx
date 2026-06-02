@@ -135,15 +135,56 @@ function Dashboard({
     }
   }
 
-  function updateAssignment
-setGeneratedSchedule(updated);
-    window.dispatchEvent(
-      new CustomEvent("beijer:schedule-edited", {
-        detail: updated,
-      })
-    );
-  }
+function updateAssignment(employeeId, date, newCode) {
+  if (!generatedSchedule) return;
 
+  const updated = {
+    ...generatedSchedule,
+    rows: generatedSchedule.rows.map((row) => {
+      if (row.employeeId !== employeeId) return row;
+
+      const assignments = row.assignments.map((a) => {
+        if (a.date !== date) return a;
+
+        const shift = shiftFromCode(newCode);
+
+        return {
+          ...a,
+          ...shift,
+          manuallyEdited: true,
+          locked: true,
+          preferenceReasons: ["Manuellt justerad"],
+        };
+      });
+
+      return {
+        ...row,
+        assignments,
+        totals: {
+          ...row.totals,
+          hours: assignments.reduce(
+            (sum, a) => sum + (a.hours || 0),
+            0
+          ),
+        },
+      };
+    }),
+    metadata: {
+      ...(generatedSchedule.metadata || {}),
+      manuallyEditedAt: new Date().toISOString(),
+    },
+  };
+
+  setGeneratedSchedule(updated);
+
+  window.dispatchEvent(
+    new CustomEvent("beijer:schedule-edited", {
+      detail: updated,
+    })
+  );
+}
+
+return (
   return (
     <div className="main-layout">
       <div className="stack">
