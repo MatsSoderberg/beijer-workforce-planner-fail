@@ -67,6 +67,24 @@ function formatShift(a) {
   return a.label || a.code || "";
 }
 
+function resetGeneratedSchedule() {
+  const ok = window.confirm(
+    "Vill du återställa genererat schema? Personal och önskemål behålls."
+  );
+
+  if (!ok) return;
+
+  setGeneratedSchedule(null);
+
+  window.dispatchEvent(
+    new CustomEvent("beijer:schedule-edited", {
+      detail: null,
+    })
+  );
+
+  setDbStatus("Schema återställt");
+}
+
 function Dashboard({
   setGeneratedSchedule,
   generatedSchedule,
@@ -219,7 +237,16 @@ function updateAssignment(employeeId, date, newCode) {
     })
   );
 }
-  return (
+  
+<button
+  type="button"
+  className="btn ghost"
+  onClick={resetGeneratedSchedule}
+>
+  Återställ schema
+</button>
+
+return (
     <div className="main-layout">
       <div className="stack">
         <div className="grid four">
