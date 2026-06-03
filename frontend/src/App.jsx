@@ -302,19 +302,37 @@ return (
           <div className="card">
             <div className="section-title">Veckovy</div>
 
-            <div className="top-gap">
-              <select
-                className="pref-input"
-                value={visibleWeek || ""}
-                onChange={(e) => setSelectedWeek(Number(e.target.value))}
-              >
-                {weeks.map((week) => (
-                  <option key={week} value={week}>
-                    Vecka {week}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div
+  className="top-gap"
+  style={{
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+  }}
+>
+  <select
+    className="pref-input"
+    value={visibleWeek || ""}
+    onChange={(e) =>
+      setSelectedWeek(Number(e.target.value))
+    }
+    style={{ flex: 1 }}
+  >
+    {weeks.map((week) => (
+      <option key={week} value={week}>
+        Vecka {week}
+      </option>
+    ))}
+  </select>
+
+  <button
+    type="button"
+    className="btn ghost"
+    onClick={resetGeneratedSchedule}
+  >
+    Återställ schema
+  </button>
+</div>
 
             <div style={{ overflowX: "auto", marginTop: 16 }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
