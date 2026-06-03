@@ -68,6 +68,7 @@ function formatShift(a) {
 }
 
 function Dashboard({
+  setGeneratedSchedule,
   generatedSchedule,
   employees,
   dbStatus,
@@ -654,6 +655,7 @@ useEffect(() => {
        
         {role === 'chef' && view === 'dashboard' && (
            <Dashboard
+    setGeneratedSchedule={setGeneratedSchedule}
     generatedSchedule={generatedSchedule}
     employees={employees}
     dbStatus={dbStatus}
