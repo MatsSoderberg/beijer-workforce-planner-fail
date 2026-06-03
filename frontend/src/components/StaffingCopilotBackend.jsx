@@ -455,7 +455,74 @@ const [reviewedAction, setReviewedAction] = useState(null);
       rows: generated?.rows?.length || 0,
     };
   }, [generated]);
+function applySuggestion(card) {
+  if (!generated || !setGenerated) return;
 
+  const updated = structuredClone(generated);
+  let changed = false;
+
+  updated.rows.forEach((row) => {
+    const stats = personStats(row);
+
+    // Minska kvällsbelastning
+    if (
+      card.title.toLowerCase().includes("kväll") &&
+      stats.evenings >= 5
+    ) {
+      const eveningShift = row.assignments.find(
+        (a) => a.code === "K"
+      );
+
+      if (eveningShift?.locked) return;
+
+      if (eveningShift && !changed) {
+        eveningShift.code = "D";
+        eveningShift.label = "Dag";
+        eveningShift.start = "08:00";
+        eveningShift.end = "17:00";
+        eveningShift.hours = 8;
+        eveningShift.manuallyEdited = true;
+        eveningShift.locked = true;
+        changed = true;
+      }
+    }
+
+    // Minska helgbelastning
+    if (
+      card.title.toLowerCase().includes("helg") &&
+      stats.weekends >= 3
+    ) {
+      const weekendShift = row.assignments.find(
+        (a) => a.code === "H"
+      );
+
+      if (weekendShift?.locked) return;
+
+      if (weekendShift && !changed) {
+        weekendShift.code = "L";
+        weekendShift.label = "Ledig";
+        weekendShift.start = "";
+        weekendShift.end = "";
+        weekendShift.hours = 0;
+        weekendShift.manuallyEdited = true;
+        weekendShift.locked = true;
+        changed = true;
+      }
+    }
+  });
+
+  if (changed) {
+    setGenerated(updated);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        text: `Jag har applicerat: ${card.title}`,
+      },
+    ]);
+  }
+}
   function ask(question) {
     if (!question.trim()) return;
 
