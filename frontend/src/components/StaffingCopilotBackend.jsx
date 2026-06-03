@@ -511,17 +511,37 @@ function applySuggestion(card) {
     }
   });
 
-  if (changed) {
-    setGenerated(updated);
+ if (changed) {
+  updated.metadata = {
+    ...(updated.metadata || {}),
+    manuallyEditedAt: new Date().toISOString(),
+    evaAppliedAt: new Date().toISOString(),
+    evaLastAction: card.title,
+  };
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        text: `Jag har applicerat: ${card.title}`,
-      },
-    ]);
-  }
+  setGenerated(updated);
+
+  window.dispatchEvent(
+    new CustomEvent("beijer:schedule-edited", {
+      detail: updated,
+    })
+  );
+
+  setReviewedAction({
+    ...card,
+    review: `✅ Applicerat\n\nEva har applicerat: ${card.title}\n\nSchemat är uppdaterat. Ändrade pass är markerade som låsta.`,
+  });
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      role: "assistant",
+      text: `✅ Jag har applicerat: ${card.title}. Ändrade pass är nu låsta.`,
+    },
+  ]);
+
+  return;
+}
 }
   function ask(question) {
     if (!question.trim()) return;
