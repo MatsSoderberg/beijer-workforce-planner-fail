@@ -183,8 +183,6 @@ function updateAssignment(employeeId, date, newCode) {
     })
   );
 }
-
-return (
   return (
     <div className="main-layout">
       <div className="stack">
