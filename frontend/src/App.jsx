@@ -282,35 +282,11 @@ function updateAssignment(employeeId, date, newCode) {
                                 </option>
                               ))}
                             </select>
-                          {a.locked && (
-  <>
-    <div
-      style={{
-        color: "red",
-        fontSize: 10,
-      }}
-    >
-      LOCKED
-    </div>
-
-    <div
-      style={{
-        position: "absolute",
-        top: 6,
-        right: 6,
-        fontSize: 14,
-        opacity: 0.9,
-        zIndex: 10,
-        pointerEvents: "none",
-      }}
-    >
-      🔒
-    </div>
-  </>
-)}
-    🔒
+ {a.locked ? (
+  <div className="save-pill" style={{ marginTop: 6 }}>
+    🔒 Låst
   </div>
-)}
+) : null}
 
                             {a.manuallyEdited && (
                               <div className="save-pill" style={{ marginTop: 6 }}>
