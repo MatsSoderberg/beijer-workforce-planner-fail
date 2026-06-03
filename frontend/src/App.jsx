@@ -275,14 +275,6 @@ function updateAssignment(employeeId, date, newCode) {
   </div>
 )}
 
-
-    return {
-      department,
-      days,
-    };
-  });
-}
-}
         {generatedSchedule?.rows?.length > 0 && (
           <div className="card">
             <div className="section-title">Veckovy</div>
