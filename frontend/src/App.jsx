@@ -258,6 +258,7 @@ function updateAssignment(employeeId, date, newCode) {
                           <td
                             key={a.date}
                             style={{
+                              position: "relative",
                               padding: 10,
                               borderTop: "1px solid rgba(255,255,255,0.12)",
                               background: getShiftColor(a.code, a.manuallyEdited),
@@ -282,6 +283,9 @@ function updateAssignment(employeeId, date, newCode) {
                               ))}
                             </select>
                            {a.locked && (
+                      <div style={{ color: "red", fontSize: 10 }}>
+  LOCKED
+</div>      
   <div
     style={{
       position: "absolute",
