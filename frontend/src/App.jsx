@@ -67,7 +67,7 @@ function formatShift(a) {
   return a.label || a.code || "";
 }
 
-function resetGeneratedSchedule() {
+async function resetGeneratedSchedule() {
   const ok = window.confirm(
     "Vill du återställa genererat schema? Personal och önskemål behålls."
   );
@@ -85,12 +85,20 @@ function resetGeneratedSchedule() {
   setGeneratedSchedule(resetSchedule);
   setDbStatus("Schema återställt");
 
+  await savePlannerState({
+    employees,
+    preferences,
+    generatedSchedule: resetSchedule,
+    savedAt: new Date().toISOString(),
+  });
+}
+
   window.dispatchEvent(
     new CustomEvent("beijer:schedule-edited", {
       detail: resetSchedule,
     })
   );
-  
+
   setDbStatus("Schema återställt");
 }
 
