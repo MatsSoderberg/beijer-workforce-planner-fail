@@ -201,6 +201,84 @@ function updateAssignment(employeeId, date, newCode) {
 
         <GeneratedSchedulePreview generated={generatedSchedule} />
 
+{staffingHeatmap.length > 0 && (
+  <div className="card">
+    <div className="section-title">Bemanningsrisk</div>
+    <div className="muted">
+      Snabb översikt per avdelning och dag. Grön = bra, gul = tunn, röd = risk.
+    </div>
+
+    <div className="heatmap-grid top-gap">
+      <div className="heatmap-header"></div>
+
+      {weekDays.map((day) => (
+        <div key={day.date} className="heatmap-day">
+          {day.date}
+        </div>
+      ))}
+
+      {staffingHeatmap.map((row) => (
+        <React.Fragment key={row.department}>
+          <div className="heatmap-dept">{row.department}</div>
+
+          {row.days.map((day) => (
+            <div
+              key={`${row.department}-${day.date}`}
+              className={`heatmap-cell ${day.status}`}
+              title={`${row.department} ${day.date}: ${day.working} bemannade`}
+            >
+              <div>{day.icon}</div>
+              <div className="heatmap-count">{day.working}</div>
+            </div>
+          ))}
+        </React.Fragment>
+      ))}
+    </div>
+  </div>
+)}
+
+function buildStaffingHeatmap() {
+  if (!generatedSchedule?.rows?.length || !weekDays?.length) return [];
+
+  const departments = ["Kassa", "Färg", "Järn"];
+
+  return departments.map((department) => {
+    const days = weekDays.map((day) => {
+      const working = generatedSchedule.rows.filter((row) => {
+        if (row.department !== department) return false;
+
+        const assignment = row.assignments.find((a) => a.date === day.date);
+        return assignment && assignment.code !== "L";
+      }).length;
+
+      let status = "good";
+      let icon = "🟢";
+
+      if (working <= 0) {
+        status = "risk";
+        icon = "🔴";
+      } else if (working === 1) {
+        status = "thin";
+        icon = "🟡";
+      }
+
+      return {
+        date: day.date,
+        label: day.date,
+        working,
+        status,
+        icon,
+      };
+    });
+
+const staffingHeatmap = buildStaffingHeatmap();
+
+    return {
+      department,
+      days,
+    };
+  });
+}
         {generatedSchedule?.rows?.length > 0 && (
           <div className="card">
             <div className="section-title">Veckovy</div>
