@@ -74,14 +74,23 @@ function resetGeneratedSchedule() {
 
   if (!ok) return;
 
-  setGeneratedSchedule(null);
+  const resetSchedule = {
+    rows: [],
+    metadata: {
+      resetAt: new Date().toISOString(),
+    },
+    diagnostics: null,
+  };
+
+  setGeneratedSchedule(resetSchedule);
+  setDbStatus("Schema återställt");
 
   window.dispatchEvent(
     new CustomEvent("beijer:schedule-edited", {
-      detail: null,
+      detail: resetSchedule,
     })
   );
-
+  
   setDbStatus("Schema återställt");
 }
 
