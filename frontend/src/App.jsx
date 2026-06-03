@@ -88,6 +88,44 @@ function Dashboard({
     generatedSchedule?.rows?.[0]?.assignments?.filter(
       (a) => getISOWeek(a.date) === visibleWeek
     ) || [];
+const weekDays =
+  generatedSchedule?.rows?.[0]?.assignments?.filter(
+    (a) => getISOWeek(a.date) === visibleWeek
+  ) || [];
+
+function buildStaffingHeatmap() {
+  if (!generatedSchedule?.rows?.length || !weekDays?.length) return [];
+
+  const departments = ["Kassa", "Färg", "Järn"];
+
+  return departments.map((department) => {
+    const days = weekDays.map((day) => {
+      const working = generatedSchedule.rows.filter((row) => {
+        if (row.department !== department) return false;
+
+        const assignment = row.assignments.find((a) => a.date === day.date);
+        return assignment && assignment.code !== "L";
+      }).length;
+
+      let status = "good";
+      let icon = "🟢";
+
+      if (working <= 0) {
+        status = "risk";
+        icon = "🔴";
+      } else if (working === 1) {
+        status = "thin";
+        icon = "🟡";
+      }
+
+      return { date: day.date, label: day.date, working, status, icon };
+    });
+
+    return { department, days };
+  });
+}
+
+const staffingHeatmap = buildStaffingHeatmap();
 
   const shiftOptions = [
     { code: "L", label: "Ledig" },
@@ -237,46 +275,7 @@ function updateAssignment(employeeId, date, newCode) {
   </div>
 )}
 
-function buildStaffingHeatmap() {
-  if (!generatedSchedule?.rows?.length || !weekDays?.length)
-    return [];
 
-  const departments = ["Kassa", "Färg", "Järn"];
-
-  return departments.map((department) => {
-    const days = weekDays.map((day) => {
-      const working = generatedSchedule.rows.filter((row) => {
-        if (row.department !== department) return false;
-
-        const assignment = row.assignments.find(
-          (a) => a.date === day.date
-        );
-
-        return assignment && assignment.code !== "L";
-      }).length;
-
-      let status = "good";
-      let icon = "🟢";
-
-      if (working <= 0) {
-        status = "risk";
-        icon = "🔴";
-      } else if (working === 1) {
-        status = "thin";
-        icon = "🟡";
-      }
-
-      return {
-        date: day.date,
-        label: day.date,
-        working,
-        status,
-        icon,
-      };
-    });
-
-    const staffingHeatmap = buildStaffingHeatmap();
-    
     return {
       department,
       days,
