@@ -84,10 +84,6 @@ function Dashboard({
   const [selectedWeek, setSelectedWeek] = useState(weeks[0] || null);
   const visibleWeek = selectedWeek || weeks[0];
 
-  const weekDays =
-    generatedSchedule?.rows?.[0]?.assignments?.filter(
-      (a) => getISOWeek(a.date) === visibleWeek
-    ) || [];
 const weekDays =
   generatedSchedule?.rows?.[0]?.assignments?.filter(
     (a) => getISOWeek(a.date) === visibleWeek
