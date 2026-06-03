@@ -378,7 +378,6 @@ function applySuggestion(card) {
 );
 
 if (eveningShift?.locked) return;
-);
 
       if (eveningShift && !changed) {
         eveningShift.code = "D";
