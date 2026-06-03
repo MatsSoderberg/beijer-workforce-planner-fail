@@ -238,7 +238,8 @@ function updateAssignment(employeeId, date, newCode) {
 )}
 
 function buildStaffingHeatmap() {
-  if (!generatedSchedule?.rows?.length || !weekDays?.length) return [];
+  if (!generatedSchedule?.rows?.length || !weekDays?.length)
+    return [];
 
   const departments = ["Kassa", "Färg", "Järn"];
 
@@ -247,7 +248,10 @@ function buildStaffingHeatmap() {
       const working = generatedSchedule.rows.filter((row) => {
         if (row.department !== department) return false;
 
-        const assignment = row.assignments.find((a) => a.date === day.date);
+        const assignment = row.assignments.find(
+          (a) => a.date === day.date
+        );
+
         return assignment && assignment.code !== "L";
       }).length;
 
@@ -271,13 +275,14 @@ function buildStaffingHeatmap() {
       };
     });
 
-const staffingHeatmap = buildStaffingHeatmap();
-
+    const staffingHeatmap = buildStaffingHeatmap();
+    
     return {
       department,
       days,
     };
   });
+}
 }
         {generatedSchedule?.rows?.length > 0 && (
           <div className="card">
