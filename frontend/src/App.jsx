@@ -93,15 +93,6 @@ async function resetGeneratedSchedule() {
   });
 }
 
-  window.dispatchEvent(
-    new CustomEvent("beijer:schedule-edited", {
-      detail: resetSchedule,
-    })
-  );
-
-  setDbStatus("Schema återställt");
-}
-
 function Dashboard({
   setGeneratedSchedule,
   generatedSchedule,
