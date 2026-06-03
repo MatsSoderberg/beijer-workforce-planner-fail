@@ -397,7 +397,6 @@ function applySuggestion(card) {
       const weekendShift = row.assignments.find(
   (a) => a.code === "H" && !a.locked
 );
-      );
 
       if (weekendShift && !changed) {
         weekendShift.code = "L";
