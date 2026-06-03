@@ -374,7 +374,10 @@ function applySuggestion(card) {
       stats.evenings >= 5
     ) {
       const eveningShift = row.assignments.find(
-  (a) => a.code === "K" && !a.locked
+  (a) => a.code === "K"
+);
+
+if (eveningShift?.locked) return;
 );
 
       if (eveningShift && !changed) {
@@ -395,8 +398,10 @@ function applySuggestion(card) {
       stats.weekends >= 3
     ) {
       const weekendShift = row.assignments.find(
-  (a) => a.code === "H" && !a.locked
+  (a) => a.code === "H"
 );
+
+if (weekendShift?.locked) return;
 
       if (weekendShift && !changed) {
         weekendShift.code = "L";
