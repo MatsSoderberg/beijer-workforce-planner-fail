@@ -136,6 +136,7 @@ function Dashboard({
   }
 
 function updateAssignment(employeeId, date, newCode) {
+  console.log("updateAssignment fired", employeeId, date, newCode);
   if (!generatedSchedule) return;
 
   const updated = {
