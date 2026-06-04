@@ -700,6 +700,14 @@ useEffect(() => {
       savedAt: new Date().toISOString(),
     });
 
+    const resetVersion = await saveScheduleVersion({
+  title: `Reset ${new Date().toLocaleDateString("sv-SE")}`,
+  comment: "Schema återställt",
+  generatedSchedule: resetSchedule,
+  generatedBy: session?.name || "Chef",
+});
+
+setScheduleVersions((prev) => [resetVersion, ...prev]);
     const savedVersion = await saveScheduleVersion({
       title: `Schema ${new Date().toLocaleDateString('sv-SE')}`,
       comment: '',
