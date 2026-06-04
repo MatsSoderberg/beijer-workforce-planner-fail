@@ -93,12 +93,7 @@ await savePlannerState({
   scheduleVersions: [],
   savedAt: new Date().toISOString(),
 });
-    employees,
-    preferences,
-    generatedSchedule: resetSchedule,
-    savedAt: new Date().toISOString(),
-  });
-}
+   }
 
 function Dashboard({
   setGeneratedSchedule,
