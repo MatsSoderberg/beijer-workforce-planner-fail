@@ -83,9 +83,16 @@ async function resetGeneratedSchedule() {
   };
 
   setGeneratedSchedule(resetSchedule);
-  setDbStatus("Schema återställt");
+setScheduleVersions([]);
+setDbStatus("Schema återställt");
 
-  await savePlannerState({
+await savePlannerState({
+  employees,
+  preferences,
+  generatedSchedule: resetSchedule,
+  scheduleVersions: [],
+  savedAt: new Date().toISOString(),
+});
     employees,
     preferences,
     generatedSchedule: resetSchedule,
