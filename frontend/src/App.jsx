@@ -636,6 +636,7 @@ export default function App() {
   return;
 }
         const saved = await loadPlannerState();
+        console.log("Loaded planner state", saved);
 
         if (saved?.employees) {
           setEmployees(saved.employees);
