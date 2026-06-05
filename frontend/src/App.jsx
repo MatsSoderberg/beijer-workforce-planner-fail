@@ -85,6 +85,7 @@ async function resetGeneratedSchedule() {
   setGeneratedSchedule(resetSchedule);
 setScheduleVersions([]);
 setDbStatus("Schema återställt");
+localStorage.setItem("beijer:schedule-reset", "true");
 
 await savePlannerState({
   employees,
@@ -628,6 +629,12 @@ export default function App() {
   useEffect(() => {
     async function loadFromDb() {
       try {
+        if (localStorage.getItem("beijer:schedule-reset") === "true") {
+  setGeneratedSchedule(null);
+  setScheduleVersions([]);
+  setPlannerLoaded(true);
+  return;
+}
         const saved = await loadPlannerState();
 
         if (saved?.employees) {
