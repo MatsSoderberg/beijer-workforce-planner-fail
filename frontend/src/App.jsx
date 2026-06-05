@@ -638,9 +638,13 @@ export default function App() {
           setPreferences(saved.preferences);
         }
 
-        if (saved?.generatedSchedule) {
-          setGeneratedSchedule(saved.generatedSchedule);
-        }
+        if (saved?.generatedSchedule?.metadata?.resetAt) {
+  setGeneratedSchedule(null);
+} else if (saved?.generatedSchedule?.rows?.length > 0) {
+  setGeneratedSchedule(saved.generatedSchedule);
+} else {
+  setGeneratedSchedule(null);
+}
 
         setDbStatus(saved ? 'Laddad' : 'Tom');
       } catch (err) {
@@ -661,8 +665,7 @@ export default function App() {
       savePlannerState({
         employees,
         preferences,
-        generatedSchedule: generatedSchedule || undefined,
-        savedAt: new Date().toISOString(),
+generatedSchedule,        savedAt: new Date().toISOString(),
       })
         .then(() => {
           setDbStatus('Sparad');
