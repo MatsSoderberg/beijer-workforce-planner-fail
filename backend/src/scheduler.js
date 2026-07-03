@@ -13,6 +13,8 @@ function formatDate(date) { return date.toISOString().slice(0, 10); }
 function dayName(date) { return ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'][date.getDay()]; }
 function isWeekend(date) { const d = date.getDay(); return d === 0 || d === 6; }
 function isSaturday(date) { return date.getDay() === 6; }
+function isSunday(date) { return date.getDay() === 0; }
+function isFullTime(emp) { return (emp.employmentPct ?? 100) >= 100; }
 function daterange(from, to) { const out = []; let cur = toDate(from); const end = toDate(to); while (cur <= end) { out.push(new Date(cur)); cur.setDate(cur.getDate() + 1); } return out; }
 function weekNumber(date) { const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); const dayNum = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); return Math.ceil((((d - yearStart) / 86400000) + 1) / 7); }
 function employeeWeeklyTarget(emp) { return 40 * (emp.employmentPct / 100); }
@@ -114,6 +116,42 @@ export function generateSchedule(state) {
           end: shift.end,
           employeeName: emp.name,
           weekend,
+          if (
+  weekend &&
+  isSaturday(date) &&
+  isFullTime(emp)
+) {
+  const sundayDate = dateAdd(date, 1);
+  const sundayStr = formatDate(sundayDate);
+
+  const alreadyHasSunday =
+    schedule.some(
+      (r) =>
+        r.date === sundayStr &&
+        r.employeeName === emp.name
+    );
+
+  if (!alreadyHasSunday) {
+    schedule.push({
+      id: `${sundayStr}-${dept}-${slot}-paired`,
+      date: sundayStr,
+      day: dayName(sundayDate),
+      week: weekNumber(sundayDate),
+      dept,
+      shiftCode: shift.code,
+      shiftName: shift.name,
+      start: shift.start,
+      end: shift.end,
+      employeeName: emp.name,
+      weekend: true,
+      notes: "Helgparregel: lördag och söndag kopplade",
+    });
+
+    assignedToday.add(emp.name);
+    hourTotals[emp.name] += shift.hours;
+    weeklyHours[weekKey][emp.name] += shift.hours;
+  }
+}
           notes: weekend ? 'Helglogik tillämpad' : null
         });
 
