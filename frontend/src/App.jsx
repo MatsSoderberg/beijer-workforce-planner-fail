@@ -1,3 +1,4 @@
+import ConstraintReport from "./components/ConstraintReport";
 import React, { useState, useEffect } from 'react';
 import LoginScreen from './components/LoginScreen';
 import EditableSchedulingWizard from './components/EditableSchedulingWizard';
@@ -272,6 +273,7 @@ return (
         </div>
 
         <GeneratedSchedulePreview generated={generatedSchedule} />
+        <ConstraintReport report={generatedSchedule?.constraints} />
 
 {staffingHeatmap.length > 0 && (
   <div className="card">

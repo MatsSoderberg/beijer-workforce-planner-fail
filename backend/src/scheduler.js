@@ -164,6 +164,10 @@ function chooseBestEmployee({
     }
 
     for (const shift of shiftPool) {
+      const maxWeeklyHours = rules?.maxWeeklyHours || 47.5;
+const projectedHours = (weeklyHours?.[weekKey]?.[emp.name] || 0) + shift.hours;
+
+if (projectedHours > maxWeeklyHours) continue;
       if (emp.eveningOnly && !["K", "H"].includes(shift.code)) continue;
       if (rules.avoidEarlyAfterEvening && lastShiftIsEvening(emp.name, rules) && shift.code === "T") continue;
       if (shift.code === "K" && eveningStreak[emp.name] >= rules.maxEveningsInRow) continue;
