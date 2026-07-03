@@ -74,6 +74,7 @@ async function resetGeneratedSchedule() {
   );
 
   if (!ok) return;
+  localStorage.setItem("beijer:schedule-reset", "true");
 
   const resetSchedule = {
     rows: [],
@@ -86,7 +87,6 @@ async function resetGeneratedSchedule() {
   setGeneratedSchedule(resetSchedule);
 setScheduleVersions([]);
 setDbStatus("Schema återställt");
-localStorage.setItem("beijer:schedule-reset", "true");
 
 await savePlannerState({
   employees,
