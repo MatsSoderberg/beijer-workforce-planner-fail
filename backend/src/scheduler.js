@@ -210,18 +210,7 @@ if (projectedHours > maxWeeklyHours) continue;
 
   if (best) return best;
 
-  const fallbackEmp =
-    deptEmployees.find((e) => !assignedToday.has(e.name)) || deptEmployees[0];
-
-  const fallbackShift =
-    shiftPool.find((s) => !fallbackEmp?.eveningOnly || ["K", "H"].includes(s.code)) ||
-    shiftPool[0];
-
-  return {
-    emp: fallbackEmp,
-    shift: fallbackShift,
-    score: 999,
-  };
+  return null;
 }
 
 function lastShiftIsEvening() {
