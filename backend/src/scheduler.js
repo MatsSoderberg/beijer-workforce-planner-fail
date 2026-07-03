@@ -527,3 +527,6 @@ export function computeMetrics(state, schedule) {
     deviations,
   };
 }
+export function scheduleSummary(state) {
+  return computeMetrics(state, state.schedule || []);
+}
