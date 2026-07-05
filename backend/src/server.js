@@ -78,6 +78,7 @@ res.json(
     generated.metrics || {}
   )
 );
+});
 
 app.post('/api/schedule/publish', requireAuth, requireChef, async (req, res) => {
   res.json(await publishRun(Boolean(req.body?.published)));
