@@ -1,3 +1,4 @@
+import dayOffBeforeWeekend from "./constraints/dayOffBeforeWeekend.js";
 import weekendPair from "./constraints/weekendPair.js";
 import maxWeeklyHours from "./constraints/maxWeeklyHours.js";
 import {
@@ -8,6 +9,7 @@ import {
 const constraints = [
   maxWeeklyHours,
   weekendPair,
+  dayOffBeforeWeekend,
 ];
 
 export function generateScheduleV2(state) {
