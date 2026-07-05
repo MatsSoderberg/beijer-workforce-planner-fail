@@ -1,9 +1,12 @@
+import maxWeeklyHours from "./constraints/maxWeeklyHours.js";
 import {
   runHardConstraints,
   runSoftConstraints,
 } from "./constraintRunner.js";
 
-const constraints = [];
+const constraints = [
+  maxWeeklyHours,
+];
 
 export function generateScheduleV2(state) {
   return {
