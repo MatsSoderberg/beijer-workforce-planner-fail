@@ -1,3 +1,4 @@
+import weekendPair from "./constraints/weekendPair.js";
 import maxWeeklyHours from "./constraints/maxWeeklyHours.js";
 import {
   runHardConstraints,
@@ -6,6 +7,7 @@ import {
 
 const constraints = [
   maxWeeklyHours,
+  weekendPair,
 ];
 
 export function generateScheduleV2(state) {
