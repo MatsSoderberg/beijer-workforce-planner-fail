@@ -232,13 +232,34 @@ export function generateSimpleScheduleV2(state) {
     }
   }
 
-  return {
-    schedule,
+  const metrics = {
+  qualityScore: 80,
+  employeeSummary: [],
+  summary: {
+    preferenceConflicts: 0,
+    brokenPreferences: unfilledSlots.length,
+    totalWeekends: schedule.filter((r) => r.weekend && r.day === "Lör").length,
+  },
+  deviations: unfilledSlots.map((slot) => ({
+    severity: "warning",
+    category: "Bemanning",
+    message: `${slot.date} ${slot.dept}: obemannat pass`,
+  })),
+};
+
+return {
+  schedule,
+  metrics,
+  constraints: {
+    hardIssues: rejectedCandidates.flatMap((r) => r.issues || []),
+    softIssues: [],
+    issues: rejectedCandidates.flatMap((r) => r.issues || []),
+    passed: rejectedCandidates.length === 0,
+  },
+  debug: {
+    engine: "v2-simple",
     weeklyHours,
-    debug: {
-      engine: "v2-simple",
-      rejectedCandidates,
-      unfilledSlots,
-    },
-  };
-}
+    rejectedCandidates,
+    unfilledSlots,
+  },
+};

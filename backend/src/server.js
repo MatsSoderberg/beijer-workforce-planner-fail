@@ -1,3 +1,4 @@
+import { generateSimpleScheduleV2 } from "./engine/planner/simplePlannerV2.js";
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -62,9 +63,21 @@ app.post('/api/timeoff', requireAuth, async (req, res) => {
 
 app.post('/api/schedule/generate', requireAuth, requireChef, async (_req, res) => {
   const state = await getState();
-  const generated = generateSchedule(state);
-  res.json(await saveSchedule(generated.schedule, generated.metrics.qualityScore, generated.metrics));
-});
+
+const engine = req.body?.engine || "v1";
+
+const generated =
+  engine === "v2"
+    ? generateSimpleScheduleV2(state)
+    : generateSchedule(state);
+
+res.json(
+  await saveSchedule(
+    generated.schedule,
+    generated.metrics?.qualityScore || 0,
+    generated.metrics || {}
+  )
+);
 
 app.post('/api/schedule/publish', requireAuth, requireChef, async (req, res) => {
   res.json(await publishRun(Boolean(req.body?.published)));
