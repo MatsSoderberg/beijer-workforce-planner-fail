@@ -2,7 +2,13 @@ import React, { useEffect, useState } from "react";
 import PersonalPreferencesForm from "../components/PersonalPreferencesForm";
 import { fetchPreferences, savePreferences, generateSchedule } from "../lib/scheduleApi";
 
-export default function SchedulingAdminExample({ employees, rules, startDate, endDate }) {
+export default function SchedulingAdminExample({
+  employees,
+  rules,
+  startDate,
+  endDate,
+  scheduleEngine,
+}) {
   const [preferences, setPreferences] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(employees?.[0] || null);
   const [generated, setGenerated] = useState(null);
@@ -28,12 +34,13 @@ export default function SchedulingAdminExample({ employees, rules, startDate, en
     setLoading(true);
     try {
       const result = await generateSchedule({
-        employees,
-        preferences,
-        startDate,
-        endDate,
-        rules,
-      });
+  employees,
+  preferences,
+  startDate,
+  endDate,
+  rules,
+  engine: scheduleEngine,
+});
       setGenerated(result);
     } finally {
       setLoading(false);

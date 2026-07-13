@@ -49,6 +49,7 @@ export default function EditableSchedulingWizard({
   preferences = {},
   setPreferences,
   onGenerated,
+  scheduleEngine,
 }) {
   const [state, setState] = useState(defaultState);
   const [loading, setLoading] = useState(false);
@@ -154,9 +155,11 @@ export default function EditableSchedulingWizard({
             markRedDays: state.rules.markRedDays,
             optimizeEvenings: state.rules.optimizeEvenings,
             honorPreferences: state.rules.honorPreferences,
-            importedRulePackages,
-          },
-        };
+             importedRulePackages,
+  },
+
+  engine: scheduleEngine,
+};
 
         let generated;
         try {

@@ -609,6 +609,7 @@ export default function App() {
   const [preferences, setPreferences] = useState(initialPreferences);
   const [dbStatus, setDbStatus] = useState('Ej laddad');
   const [plannerLoaded, setPlannerLoaded] = useState(false);
+  const [scheduleEngine, setScheduleEngine] = useState("v1");
 
   const [scheduleVersions, setScheduleVersions] = useState([]);
 
@@ -821,6 +822,7 @@ setScheduleVersions((prev) => [resetVersion, ...prev]);
             preferences={preferences}
             setPreferences={setPreferences}
             onGenerated={handleGeneratedSchedule}
+            scheduleEngine={scheduleEngine}
           />
         )}
 
